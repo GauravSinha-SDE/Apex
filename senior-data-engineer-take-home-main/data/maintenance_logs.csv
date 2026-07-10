@@ -1,0 +1,81 @@
+work_order_id,asset_number,description,status,priority,type,created_date,completed_date,downtime_minutes,technician,parts_used
+WO-20260001,A-105,Temperature control loop oscillating - PID tuning required,COMPLETED,Medium,Breakdown,2026-02-23 10:00:00,2026-02-23 11:31:32,73,T-Williams,
+WO-20260002,A-301,Label misalignment detected - adjust label applicator,OPEN,Medium,Corrective,2026-03-15 10:00:00,,,T-Nguyen,relay CR-24V
+WO-20260003,A-102,Scheduled replacement of wear parts per OEM schedule,COMPLETED,Low,Preventive,02/19/2026 09:00,2026-02-19 17:40:48,411,T-Brown,V-belt A68
+WO-20260004,A-101,Biannual motor alignment verification,COMPLETED,Low,PM,02/25/2026 20:00,2026-02-27 16:54:16,289,T-Brown,fuse 10A
+WO-20260005,A-305,Palletizer arm drift - recalibrate servo motor,COMPLETED,High,Corrective,2026-02-19 08:00:00,2026-02-20 18:17:51,122,T-Brown,gasket set GS-100
+WO-20260006,A-204,Unexpected shutdown - investigate PLC fault code 42,COMPLETED,Critical,Breakdown,2026-02-17 20:00:00,02/18/2026 20:58,334,T-Nguyen,lubricant Mobil SHC 630
+WO-20260007,A-302,Quarterly belt tension check and adjustment,COMPLETED,Low,PM,2026-02-24 13:00:00,2026-02-25 19:03:08,459,T-Lee,O-ring kit OR-50
+WO-20260008,A-301,Monthly CIP system check and chemical titration,COMPLETED,Medium,PM,2026-02-23 22:00:00,02/24/2026 14:08,345,T-Garcia,gasket set GS-100
+WO-20260009,A-101,Quarterly belt tension check and adjustment,COMPLETED,Low,Preventive,2026-03-14 23:00:00,03/16/2026 04:30,472,T-Nguyen,gasket set GS-100
+WO-20260010,A-201,Weekly conveyor chain inspection,COMPLETED,Medium,PM,02/20/2026 10:00,02/21/2026 17:52,453,T-Brown,
+WO-20260011,A-201,Vibration alarm on main drive motor - bearing replacement needed,IN_PROGRESS,High,Breakdown,03/10/2026 00:00,,,T-Lee,
+WO-20260012,A-304,Unexpected shutdown - investigate PLC fault code 42,COMPLETED,Critical,Corrective,2026-02-22 18:00:00,2026-02-24 12:35:42,215,T-Nguyen,bearing SKF-6205
+WO-20260013,A-205,Product changeover taking longer than spec - optimize recipe,COMPLETED,Medium,Breakdown,02/16/2026 22:00,2026-02-18 02:25:20,480,T-Johnson,bearing SKF-6205
+WO-20260014,A-101,Weekly conveyor chain inspection,COMPLETED,Low,Preventive,2026-03-12 19:00:00,2026-03-13 08:54:04,245,T-Nguyen,
+WO-20260015,A-201,Vibration alarm on main drive motor - bearing replacement needed,COMPLETED,High,Corrective,2026-03-10 20:00:00,03/11/2026 14:47,46,T-Nguyen,sensor PT-100
+WO-20260016,A-102,Quarterly belt tension check and adjustment,COMPLETED,Medium,PM,2026-02-19 20:00:00,2026-02-19 20:54:31,83,T-Lee,O-ring kit OR-50
+WO-20260017,A-302,Monthly CIP system check and chemical titration,CANCELLED,Low,Preventive,03/08/2026 12:00,,,T-Nguyen,bearing SKF-6205
+WO-20260018,A-103,Temperature control loop oscillating - PID tuning required,COMPLETED,High,Corrective,02/23/2026 12:00,2026-02-24 23:42:58,411,T-Johnson,bearing SKF-6205
+WO-20260019,A-104,Scheduled bearing inspection and lubrication,OPEN,Medium,Preventive,03/04/2026 09:00,,,T-Lee,fuse 10A
+WO-20260020,A-107,Leak detected on CIP return line - gasket replacement,COMPLETED,Medium,Breakdown,2026-03-12 00:00:00,2026-03-12 13:26:06,227,T-Brown,lubricant Mobil SHC 630
+WO-20260021,A-105,Fill volume inconsistency - check flowmeter calibration,COMPLETED,Medium,Corrective,02/18/2026 13:00,02/19/2026 11:10,449,T-Garcia,O-ring kit OR-50
+WO-20260022,A-203,Vibration alarm on main drive motor - bearing replacement needed,COMPLETED,Critical,Breakdown,2026-02-22 00:00:00,02/23/2026 22:22,226,T-Brown,
+WO-20260023,A-103,Leak detected on CIP return line - gasket replacement,COMPLETED,Medium,Corrective,2026-02-28 14:00:00,03/02/2026 07:52,26,T-Garcia,
+WO-20260024,A-104,Scheduled replacement of wear parts per OEM schedule,COMPLETED,Medium,Preventive,2026-03-07 23:00:00,2026-03-08 20:30:37,37,T-Lee,seal kit SK-22
+WO-20260025,A-305,Unexpected shutdown - investigate PLC fault code 42,COMPLETED,Critical,Corrective,2026-02-24 09:00:00,02/25/2026 08:04,279,T-Johnson,fuse 10A
+WO-20260026,A-204,Weekly conveyor chain inspection,COMPLETED,Medium,Preventive,2026-02-28 11:00:00,2026-02-28 19:11:53,365,T-Nguyen,sensor PT-100
+WO-20260027,A-105,Annual calibration of pressure sensors,OPEN,Medium,PM,2026-02-20 21:00:00,,,T-Nguyen,filter cartridge FC-10
+WO-20260028,A-201,Biannual motor alignment verification,COMPLETED,Medium,Preventive,2026-03-14 20:00:00,2026-03-15 01:00:17,61,T-Garcia,
+WO-20260029,A-103,Biannual motor alignment verification,CANCELLED,Low,Preventive,03/04/2026 13:00,,,T-Garcia,V-belt A68
+WO-20260030,A-301,Product changeover taking longer than spec - optimize recipe,OPEN,High,Corrective,02/28/2026 15:00,,,T-Johnson,lubricant Mobil SHC 630
+WO-20260031,A-203,Weekly conveyor chain inspection,COMPLETED,Medium,Preventive,02/26/2026 23:00,2026-02-27 02:11:24,437,T-Brown,lubricant Mobil SHC 630
+WO-20260032,A-304,Scheduled replacement of wear parts per OEM schedule,COMPLETED,Low,Preventive,03/06/2026 13:00,2026-03-08 02:57:27,372,T-Williams,relay CR-24V
+WO-20260033,A-301,Label misalignment detected - adjust label applicator,COMPLETED,High,Corrective,2026-03-13 15:00:00,2026-03-15 14:38:17,16,T-Nguyen,
+WO-20260034,A-105,Leak detected on CIP return line - gasket replacement,COMPLETED,High,Breakdown,03/04/2026 19:00,2026-03-05 00:34:19,415,T-Nguyen,filter cartridge FC-10
+WO-20260035,A-105,Unexpected shutdown - investigate PLC fault code 42,IN_PROGRESS,Medium,Corrective,2026-02-28 15:00:00,,,T-Johnson,
+WO-20260036,A-302,Scheduled bearing inspection and lubrication,COMPLETED,Low,PM,03/08/2026 17:00,03/10/2026 12:58,269,T-Nguyen,filter cartridge FC-10
+WO-20260037,A-203,Preventive seal replacement on filler valves,COMPLETED,Low,Preventive,02/21/2026 18:00,2026-02-22 06:53:36,131,T-Nguyen,
+WO-20260038,A-204,Label misalignment detected - adjust label applicator,IN_PROGRESS,Medium,Breakdown,2026-03-08 17:00:00,,,T-Lee,
+WO-20260039,A-205,Fill volume inconsistency - check flowmeter calibration,COMPLETED,High,Corrective,02/20/2026 23:00,02/21/2026 06:02,326,T-Brown,
+WO-20260040,A-201,Preventive seal replacement on filler valves,COMPLETED,Medium,PM,2026-03-05 21:00:00,2026-03-07 19:01:55,17,T-Nguyen,bearing SKF-6205
+WO-20260041,A-305,Fill volume inconsistency - check flowmeter calibration,IN_PROGRESS,High,Breakdown,02/26/2026 00:00,,,T-Nguyen,gasket set GS-100
+WO-20260042,A-301,Weekly conveyor chain inspection,COMPLETED,Low,PM,03/13/2026 18:00,03/15/2026 16:34,30,T-Brown,V-belt A68
+WO-20260043,A-203,Preventive seal replacement on filler valves,COMPLETED,Low,Preventive,2026-03-13 14:00:00,2026-03-14 19:39:35,414,T-Williams,lubricant Mobil SHC 630
+WO-20260044,A-203,Conveyor belt tracking issue causing bottle jams,COMPLETED,Medium,Corrective,2026-02-23 14:00:00,02/25/2026 11:01,408,T-Williams,fuse 10A
+WO-20260045,A-107,Preventive seal replacement on filler valves,COMPLETED,Low,Preventive,2026-03-04 12:00:00,2026-03-04 18:30:58,249,T-Williams,
+WO-20260046,A-304,Quarterly belt tension check and adjustment,COMPLETED,Low,Preventive,2026-03-08 15:00:00,03/10/2026 07:37,137,T-Garcia,relay CR-24V
+WO-20260047,A-107,Product changeover taking longer than spec - optimize recipe,COMPLETED,Critical,Corrective,02/19/2026 20:00,02/20/2026 22:32,104,T-Nguyen,
+WO-20260048,A-201,Scheduled replacement of wear parts per OEM schedule,IN_PROGRESS,Medium,Preventive,03/07/2026 22:00,,,T-Brown,O-ring kit OR-50
+WO-20260049,A-103,Annual calibration of pressure sensors,IN_PROGRESS,Low,PM,03/03/2026 16:00,,,T-Brown,lubricant Mobil SHC 630
+WO-20260050,A-203,Unexpected shutdown - investigate PLC fault code 42,COMPLETED,High,Corrective,2026-03-14 13:00:00,2026-03-16 02:05:51,427,T-Johnson,
+WO-20260051,A-305,Biannual motor alignment verification,COMPLETED,Low,Preventive,2026-03-01 09:00:00,2026-03-02 02:50:22,76,T-Williams,fuse 10A
+WO-20260052,A-205,Preventive seal replacement on filler valves,COMPLETED,Low,PM,03/04/2026 16:00,03/05/2026 10:24,471,T-Lee,seal kit SK-22
+WO-20260053,A-107,Scheduled bearing inspection and lubrication,COMPLETED,Low,Preventive,03/08/2026 11:00,2026-03-09 21:22:59,244,T-Lee,seal kit SK-22
+WO-20260054,A-103,Leak detected on CIP return line - gasket replacement,COMPLETED,Critical,Corrective,02/28/2026 10:00,2026-02-28 16:59:51,201,T-Garcia,gasket set GS-100
+WO-20260055,A-203,Annual calibration of pressure sensors,COMPLETED,Low,PM,03/03/2026 23:00,2026-03-05 10:57:48,132,T-Lee,bearing SKF-6205
+WO-20260056,A-107,Fill volume inconsistency - check flowmeter calibration,COMPLETED,Critical,Corrective,2026-03-14 20:00:00,2026-03-16 05:00:42,360,T-Johnson,
+WO-20260057,A-202,Label misalignment detected - adjust label applicator,CANCELLED,Critical,Breakdown,03/01/2026 22:00,,,T-Lee,filter cartridge FC-10
+WO-20260058,A-104,Preventive seal replacement on filler valves,COMPLETED,Low,PM,2026-03-10 16:00:00,03/10/2026 23:07,76,T-Brown,
+WO-20260059,A-304,Monthly CIP system check and chemical titration,OPEN,Low,Preventive,2026-03-09 10:00:00,,,T-Garcia,seal kit SK-22
+WO-20260060,A-305,Scheduled bearing inspection and lubrication,COMPLETED,Medium,PM,2026-03-13 00:00:00,2026-03-14 21:04:36,131,T-Williams,bearing SKF-6205
+WO-20260061,A-104,Annual calibration of pressure sensors,COMPLETED,Low,PM,2026-02-20 13:00:00,2026-02-22 02:52:19,15,T-Williams,filter cartridge FC-10
+WO-20260062,A-203,Monthly CIP system check and chemical titration,COMPLETED,Low,PM,2026-03-13 10:00:00,2026-03-13 13:42:09,92,T-Brown,relay CR-24V
+WO-20260063,A-102,Monthly CIP system check and chemical titration,COMPLETED,Medium,PM,02/21/2026 09:00,2026-02-23 02:41:20,138,T-Nguyen,fuse 10A
+WO-20260064,A-204,Unexpected shutdown - investigate PLC fault code 42,COMPLETED,Critical,Breakdown,2026-03-01 13:00:00,2026-03-03 09:34:27,440,T-Lee,
+WO-20260065,A-302,Scheduled replacement of wear parts per OEM schedule,IN_PROGRESS,Low,PM,2026-03-14 21:00:00,,,T-Lee,fuse 10A
+WO-20260066,A-103,Leak detected on CIP return line - gasket replacement,COMPLETED,Medium,Corrective,02/23/2026 14:00,2026-02-24 18:00:29,144,T-Garcia,gasket set GS-100
+WO-20260067,A-302,Palletizer arm drift - recalibrate servo motor,IN_PROGRESS,Medium,Corrective,2026-03-15 08:00:00,,,T-Johnson,seal kit SK-22
+WO-20260068,A-104,Annual calibration of pressure sensors,IN_PROGRESS,Medium,Preventive,2026-02-22 21:00:00,,,T-Garcia,sensor PT-100
+WO-20260069,A-102,Scheduled replacement of wear parts per OEM schedule,CANCELLED,Medium,PM,2026-02-16 13:00:00,,,T-Lee,O-ring kit OR-50
+WO-20260070,A-301,Preventive seal replacement on filler valves,CANCELLED,Medium,PM,2026-03-03 11:00:00,,,T-Johnson,seal kit SK-22
+WO-20260071,A-301,Scheduled bearing inspection and lubrication,IN_PROGRESS,Medium,Preventive,2026-03-03 20:00:00,,,T-Nguyen,seal kit SK-22
+WO-20260072,A-107,Cap rejection rate exceeding 5% - investigate capping head alignment,IN_PROGRESS,Medium,Corrective,2026-03-11 21:00:00,,,T-Brown,bearing SKF-6205
+WO-20260073,A-201,Annual calibration of pressure sensors,COMPLETED,Low,Preventive,03/03/2026 08:00,03/04/2026 04:54,174,T-Brown,V-belt A68
+WO-20260074,A-103,Palletizer arm drift - recalibrate servo motor,IN_PROGRESS,High,Corrective,2026-03-04 08:00:00,,,T-Johnson,V-belt A68
+WO-20260075,A-105,Conveyor belt tracking issue causing bottle jams,IN_PROGRESS,High,Breakdown,2026-03-15 10:00:00,,,T-Brown,V-belt A68
+WO-20260076,A-102,Preventive seal replacement on filler valves,COMPLETED,Medium,Preventive,2026-03-09 14:00:00,2026-03-11 07:13:39,447,T-Williams,gasket set GS-100
+WO-20260077,A-204,Scheduled bearing inspection and lubrication,COMPLETED,Low,Preventive,02/17/2026 14:00,02/18/2026 09:34,203,T-Johnson,lubricant Mobil SHC 630
+WO-20260078,A-105,Monthly CIP system check and chemical titration,OPEN,Medium,PM,03/14/2026 12:00,,,T-Johnson,
+WO-20260079,A-107,Temperature control loop oscillating - PID tuning required,COMPLETED,Medium,Breakdown,2026-02-20 23:00:00,02/21/2026 12:09,306,T-Williams,
+WO-20260080,A-107,Monthly CIP system check and chemical titration,OPEN,Medium,Preventive,02/23/2026 16:00,,,T-Lee,V-belt A68

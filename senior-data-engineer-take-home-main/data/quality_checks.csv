@@ -1,0 +1,101 @@
+check_id,batch_id,line_id,check_type,parameter,value,unit,lower_spec,upper_spec,result,checked_by,check_timestamp
+QC-0001,B-20260309-012,3,in_process,label_offset_mm,-0.48,mm,-2.0,2.0,PASS,QC-Patel,2026-03-09T10:11:00
+QC-0002,B-20260303-013,Line 1,incoming,fill_weight_g,356.703,g,350,360,PASS,QC-Schmidt,2026-03-03T23:44:00
+QC-0003,B-20260311-006,3,in_process,label_offset_mm,-0.35,mm,-2.0,2.0,PASS,QC-Patel,2026-03-11T18:04:00
+QC-0004,B-20260302-005,3,in_process,fill_weight_g,501.729,g,495,505,PASS,QC-Okafor,2026-03-02T17:06:00
+QC-0005,B-20260308-008,Line 1,in_process,label_offset_mm,0.9,mm,-2.0,2.0,PASS,QC-Schmidt,2026-03-08T13:12:00
+QC-0006,B-20260312-012,3,incoming,fill_weight_g,358.627255,g,350,360,PASS,QC-Schmidt,2026-03-12T17:23:00
+QC-0007,B-20260308-008,Line 1,final,cap_torque_nm,2.9,Nm,1.5,3.5,PASS,QC-Chen,2026-03-08T18:39:00
+QC-0008,B-20260301-010,Line 1,final,fill_weight_g,349.8,g,350,360,MARGINAL,QC-Martinez,2026-03-01T16:22:00
+QC-0009,B-20260302-014,Line-2,incoming,pH,3.3,pH,3.0,3.8,PASS,QC-Patel,2026-03-02T14:38:00
+QC-0010,B-20260303-003,Line 1,incoming,micro_count,-8.846,CFU/mL,0,10,FAIL,QC-Martinez,2026-03-03T07:39:00
+QC-0011,B-20260301-007,Line 1,in_process,carbonation_vol,3.29,volumes CO2,3.0,3.8,PASS,QC-Okafor,2026-03-01T15:11:00
+QC-0012,B-20260302-009,Line-2,in_process,micro_count,-1.897136,CFU/mL,0,10,FAIL,QC-Okafor,2026-03-02T17:34:00
+QC-0013,B-20260307-007,Line-2,final,micro_count,4.427,CFU/mL,0,10,PASS,QC-Chen,2026-03-07T16:35:00
+QC-0014,B-20260303-002,3,final,cap_torque_nm,2.133,Nm,1.5,3.5,PASS,QC-Martinez,2026-03-03T21:25:00
+QC-0015,B-20260313-003,3,in_process,carbonation_vol,3.03,volumes CO2,3.0,3.8,PASS,QC-Chen,2026-03-13T15:47:00
+QC-0016,B-20260309-005,Line 1,final,micro_count,0.83,CFU/mL,0,10,PASS,QC-Okafor,2026-03-09T20:44:00
+QC-0017,B-20260310-006,Line 1,in_process,cap_torque_nm,2.313356,Nm,1.5,3.5,PASS,QC-Martinez,2026-03-10T23:07:00
+QC-0018,B-20260311-011,Line-2,in_process,fill_weight_g,502.012489,g,495,505,PASS,QC-Chen,2026-03-11T19:24:00
+QC-0019,B-20260303-012,3,incoming,cap_torque_nm,2.27,Nm,1.5,3.5,PASS,QC-Chen,2026-03-03T07:21:00
+QC-0020,B-20260309-001,Line 1,final,cap_torque_nm,3.1,Nm,1.5,3.5,PASS,QC-Patel,2026-03-09T09:07:00
+QC-0021,B-20260305-007,3,final,fill_weight_g,358.7,g,350,360,PASS,QC-Patel,2026-03-05T11:17:00
+QC-0022,B-20260310-014,3,in_process,pH,3.3,pH,3.0,3.8,PASS,QC-Martinez,2026-03-10T16:01:00
+QC-0023,B-20260303-002,Line 1,final,brix,11.47,degrees,10.5,11.5,PASS,QC-Okafor,2026-03-03T12:35:00
+QC-0024,B-20260304-010,Line-2,final,label_offset_mm,1.109,mm,-2.0,2.0,PASS,QC-Schmidt,2026-03-04T15:09:00
+QC-0025,B-20260303-008,3,final,cap_torque_nm,1.498763,Nm,1.5,3.5,MARGINAL,QC-Okafor,2026-03-03T12:18:00
+QC-0026,B-20260307-008,Line-2,incoming,micro_count,3.928,CFU/mL,0,10,PASS,QC-Chen,2026-03-07T21:07:00
+QC-0027,B-20260308-015,Line 1,final,carbonation_vol,3.538003,volumes CO2,3.0,3.8,PASS,QC-Martinez,2026-03-08T12:22:00
+QC-0028,B-20260312-007,3,incoming,carbonation_vol,3.44,volumes CO2,3.0,3.8,PASS,QC-Okafor,2026-03-12T10:00:00
+QC-0029,B-20260313-011,Line 1,final,fill_weight_g,353.025,g,350,360,PASS,QC-Schmidt,2026-03-13T13:42:00
+QC-0030,B-20260310-001,3,incoming,fill_weight_g,351.07,g,350,360,PASS,QC-Okafor,2026-03-10T16:10:00
+QC-0031,B-20260303-001,Line-2,in_process,fill_weight_g,356.09558,g,350,360,PASS,QC-Chen,2026-03-03T22:03:00
+QC-0032,B-20260301-015,Line-2,final,micro_count,1.6,CFU/mL,0,10,PASS,QC-Martinez,2026-03-01T14:33:00
+QC-0033,B-20260301-009,Line 1,final,fill_weight_g,354.174,g,350,360,PASS,QC-Chen,2026-03-01T17:53:00
+QC-0034,B-20260301-001,Line 1,in_process,micro_count,0.8,CFU/mL,0,10,PASS,QC-Patel,2026-03-01T19:01:00
+QC-0035,B-20260310-010,3,in_process,brix,10.89,degrees,10.5,11.5,PASS,QC-Patel,2026-03-10T20:35:00
+QC-0036,B-20260311-009,Line 1,final,label_offset_mm,-0.7,mm,-2.0,2.0,PASS,QC-Okafor,2026-03-11T11:13:00
+QC-0037,B-20260313-013,Line 1,final,carbonation_vol,3.3,volumes CO2,3.0,3.8,PASS,QC-Chen,2026-03-13T17:05:00
+QC-0038,B-20260312-012,Line 1,in_process,label_offset_mm,-0.53,mm,-2.0,2.0,PASS,QC-Schmidt,2026-03-12T21:25:00
+QC-0039,B-20260304-013,Line 1,final,brix,10.7,degrees,10.5,11.5,PASS,QC-Okafor,2026-03-04T17:27:00
+QC-0040,B-20260309-009,3,in_process,micro_count,7.01,CFU/mL,0,10,PASS,QC-Martinez,2026-03-09T15:37:00
+QC-0041,B-20260312-010,Line-2,incoming,micro_count,0.309,CFU/mL,0,10,PASS,QC-Patel,2026-03-12T10:17:00
+QC-0042,B-20260301-010,Line-2,final,brix,11.456427,degrees,10.5,11.5,PASS,QC-Chen,2026-03-01T09:12:00
+QC-0043,B-20260303-005,Line-2,incoming,brix,10.697991,degrees,10.5,11.5,PASS,QC-Patel,2026-03-03T07:01:00
+QC-0044,B-20260314-004,3,incoming,brix,10.929,degrees,10.5,11.5,PASS,QC-Okafor,2026-03-14T13:31:00
+QC-0045,B-20260305-011,Line-2,in_process,cap_torque_nm,2.0,Nm,1.5,3.5,PASS,QC-Martinez,2026-03-05T19:23:00
+QC-0046,B-20260301-013,3,final,pH,3.382132,pH,3.0,3.8,PASS,QC-Chen,2026-03-01T19:35:00
+QC-0047,B-20260305-008,Line 1,final,fill_weight_g,355.8,g,350,360,PASS,QC-Schmidt,2026-03-05T20:02:00
+QC-0048,B-20260303-002,Line 1,in_process,carbonation_vol,3.155,volumes CO2,3.0,3.8,PASS,QC-Okafor,2026-03-03T21:40:00
+QC-0049,B-20260314-003,Line 1,final,fill_weight_g,356.5,g,350,360,PASS,QC-Martinez,2026-03-14T18:27:00
+QC-0050,B-20260302-011,Line 1,incoming,label_offset_mm,-0.509257,mm,-2.0,2.0,PASS,QC-Chen,2026-03-02T21:24:00
+QC-0051,B-20260312-013,Line-2,incoming,brix,11.03,degrees,10.5,11.5,PASS,QC-Patel,2026-03-12T18:24:00
+QC-0052,B-20260309-007,Line-2,incoming,micro_count,1.47,CFU/mL,0,10,PASS,QC-Schmidt,2026-03-09T08:36:00
+QC-0053,B-20260312-009,Line 1,incoming,carbonation_vol,3.195748,volumes CO2,3.0,3.8,PASS,QC-Martinez,2026-03-12T20:06:00
+QC-0054,B-20260309-015,Line 1,in_process,carbonation_vol,3.7,volumes CO2,3.0,3.8,PASS,QC-Martinez,2026-03-09T08:09:00
+QC-0055,B-20260303-003,Line 1,incoming,fill_weight_g,357.7,g,350,360,PASS,QC-Chen,2026-03-03T15:40:00
+QC-0056,B-20260309-004,3,in_process,fill_weight_g,355.2,g,350,360,PASS,QC-Chen,2026-03-09T20:56:00
+QC-0057,B-20260306-008,Line-2,final,fill_weight_g,496.6,g,495,505,PASS,QC-Martinez,2026-03-06T13:23:00
+QC-0058,B-20260304-014,Line-2,final,fill_weight_g,359.227,g,350,360,PASS,QC-Okafor,2026-03-04T15:44:00
+QC-0059,B-20260314-009,3,final,micro_count,2.02,CFU/mL,0,10,PASS,QC-Chen,2026-03-14T16:01:00
+QC-0060,B-20260312-001,Line-2,incoming,pH,3.3,pH,3.0,3.8,PASS,QC-Schmidt,2026-03-12T13:06:00
+QC-0061,B-20260307-013,3,incoming,carbonation_vol,3.142785,volumes CO2,3.0,3.8,PASS,QC-Chen,2026-03-07T20:02:00
+QC-0062,B-20260312-002,3,in_process,fill_weight_g,358.147,g,350,360,PASS,QC-Patel,2026-03-12T12:13:00
+QC-0063,B-20260301-011,Line-2,incoming,fill_weight_g,357.699,g,350,360,PASS,QC-Okafor,2026-03-01T20:41:00
+QC-0064,B-20260303-005,Line 1,in_process,brix,10.7,degrees,10.5,11.5,PASS,QC-Martinez,2026-03-03T20:39:00
+QC-0065,B-20260312-002,Line-2,in_process,carbonation_vol,3.63014,volumes CO2,3.0,3.8,PASS,QC-Schmidt,2026-03-12T14:08:00
+QC-0066,B-20260305-014,3,incoming,fill_weight_g,499.0,g,495,505,PASS,QC-Chen,2026-03-05T14:39:00
+QC-0067,B-20260307-012,Line-2,incoming,fill_weight_g,356.994,g,350,360,PASS,QC-Martinez,2026-03-07T18:50:00
+QC-0068,B-20260303-007,3,in_process,carbonation_vol,3.721771,volumes CO2,3.0,3.8,PASS,QC-Patel,2026-03-03T14:45:00
+QC-0069,B-20260302-014,Line 1,in_process,pH,3.072,pH,3.0,3.8,PASS,QC-Schmidt,2026-03-02T14:02:00
+QC-0070,B-20260310-007,Line-2,final,label_offset_mm,-0.049007,mm,-2.0,2.0,PASS,QC-Patel,2026-03-10T20:34:00
+QC-0071,B-20260307-001,Line 1,final,label_offset_mm,-0.890051,mm,-2.0,2.0,PASS,QC-Schmidt,2026-03-07T19:28:00
+QC-0072,B-20260312-011,Line 1,final,label_offset_mm,-0.99,mm,-2.0,2.0,PASS,QC-Martinez,2026-03-12T20:45:00
+QC-0073,B-20260303-003,Line 1,final,brix,10.6,degrees,10.5,11.5,PASS,QC-Martinez,2026-03-03T23:32:00
+QC-0074,B-20260308-013,3,final,carbonation_vol,3.5,volumes CO2,3.0,3.8,PASS,QC-Patel,2026-03-08T19:51:00
+QC-0075,B-20260311-001,Line 1,in_process,brix,10.796,degrees,10.5,11.5,PASS,QC-Schmidt,2026-03-11T12:38:00
+QC-0076,B-20260301-012,Line 1,final,pH,3.51,pH,3.0,3.8,PASS,QC-Patel,2026-03-01T09:10:00
+QC-0077,B-20260305-004,3,final,label_offset_mm,-0.871063,mm,-2.0,2.0,PASS,QC-Martinez,2026-03-05T14:07:00
+QC-0078,B-20260314-010,Line-2,incoming,micro_count,5.89,CFU/mL,0,10,PASS,QC-Chen,2026-03-14T11:29:00
+QC-0079,B-20260302-008,3,final,pH,3.36,pH,3.0,3.8,PASS,QC-Schmidt,2026-03-02T07:14:00
+QC-0080,B-20260311-004,Line 1,incoming,pH,3.42,pH,3.0,3.8,PASS,QC-Chen,2026-03-11T20:21:00
+QC-0081,B-20260301-005,Line-2,in_process,micro_count,-2.3,CFU/mL,0,10,FAIL,QC-Schmidt,2026-03-01T15:10:00
+QC-0082,B-20260306-006,3,in_process,fill_weight_g,502.2,g,495,505,PASS,QC-Chen,2026-03-06T23:34:00
+QC-0083,B-20260303-002,Line 1,final,carbonation_vol,3.42,volumes CO2,3.0,3.8,PASS,QC-Martinez,2026-03-03T15:42:00
+QC-0084,B-20260304-008,Line 1,incoming,fill_weight_g,358.140466,g,350,360,PASS,QC-Okafor,2026-03-04T11:38:00
+QC-0085,B-20260306-010,3,in_process,cap_torque_nm,2.454,Nm,1.5,3.5,PASS,QC-Okafor,2026-03-06T13:01:00
+QC-0086,B-20260313-009,3,in_process,fill_weight_g,499.7,g,495,505,PASS,QC-Schmidt,2026-03-13T23:16:00
+QC-0087,B-20260309-005,Line 1,final,pH,3.439672,pH,3.0,3.8,PASS,QC-Patel,2026-03-09T11:50:00
+QC-0088,B-20260306-004,Line-2,incoming,cap_torque_nm,1.8,Nm,1.5,3.5,PASS,QC-Chen,2026-03-06T21:36:00
+QC-0089,B-20260308-003,Line-2,final,carbonation_vol,3.4,volumes CO2,3.0,3.8,PASS,QC-Martinez,2026-03-08T19:25:00
+QC-0090,B-20260307-014,3,final,micro_count,4.102,CFU/mL,0,10,PASS,QC-Patel,2026-03-07T09:37:00
+QC-0091,B-20260311-009,3,incoming,cap_torque_nm,2.620709,Nm,1.5,3.5,PASS,QC-Martinez,2026-03-11T19:18:00
+QC-0092,B-20260311-001,3,incoming,pH,3.11,pH,3.0,3.8,PASS,QC-Chen,2026-03-11T09:50:00
+QC-0093,B-20260312-010,Line 1,in_process,pH,3.382172,pH,3.0,3.8,PASS,QC-Martinez,2026-03-12T23:26:00
+QC-0094,B-20260311-002,Line-2,incoming,micro_count,1.76,CFU/mL,0,10,PASS,QC-Okafor,2026-03-11T09:50:00
+QC-0095,B-20260310-013,3,in_process,fill_weight_g,350.59,g,350,360,PASS,QC-Chen,2026-03-10T07:15:00
+QC-0096,B-20260312-003,Line-2,in_process,carbonation_vol,3.467,volumes CO2,3.0,3.8,PASS,QC-Martinez,2026-03-12T18:24:00
+QC-0097,B-20260306-009,Line-2,incoming,carbonation_vol,3.55,volumes CO2,3.0,3.8,PASS,QC-Okafor,2026-03-06T08:44:00
+QC-0098,B-20260302-004,3,incoming,fill_weight_g,498.749082,g,495,505,PASS,QC-Schmidt,2026-03-02T22:33:00
+QC-0099,B-20260305-002,Line 1,in_process,carbonation_vol,3.313064,volumes CO2,3.0,3.8,PASS,QC-Martinez,2026-03-05T08:25:00
+QC-0100,B-20260306-012,Line 1,incoming,pH,3.015756,pH,3.0,3.8,PASS,QC-Patel,2026-03-06T08:19:00
