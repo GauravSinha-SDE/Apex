@@ -1,0 +1,172 @@
+# =============================================================================
+# Apex Manufacturing Lakehouse — Databricks Asset Bundle
+# Part 2D deliverable: dev/staging/prod deployment of the Lakeflow Declarative
+# Pipeline, a bootstrap job (DDL + reference-seed load), and job cluster config.
+#
+# Deploy:  databricks bundle deploy -t dev
+# Run once per env before the pipeline: databricks bundle run apex_bootstrap -t dev
+# Then:    databricks bundle run apex_pipeline -t dev
+# =============================================================================
+
+bundle:
+  name: apex_lakehouse
+
+# -----------------------------------------------------------------------------
+# Variables — everything env-specific is injected here, nothing hardcoded below.
+# catalog / raw_path / sql_warehouse_id have NO default: they are required and
+# must be supplied per target (below) or via `--var`, so a dev mistake can't
+# silently point at a prod catalog.
+# -----------------------------------------------------------------------------
+variables:
+  catalog:
+    description: Unity Catalog name for this environment (apex_dev / apex_stg / apex_prod)
+  raw_path:
+    description: >-
+      UC Volume path Auto Loader watches for landed source extracts,
+      e.g. /Volumes/apex_dev/bronze/landing
+  sql_warehouse_id:
+    description: >-
+      Serverless SQL warehouse used to run src/ddl/01_catalog_and_ref.sql (catalog/schema
+      DDL + ref table DDL + gold materialized views). Not committed with a default — set
+      per workspace via `databricks bundle deploy -t <env> --var="sql_warehouse_id=<id>"`
+      or a gitignored .databricks/bundle.override.yml.
+  node_type_id:
+    description: >-
+      Classic job-cluster node type for the bootstrap job. Default assumes Azure, since
+      plant context states SAP S/4HANA is Azure-hosted — change per actual cloud.
+    default: Standard_DS3_v2
+  notification_email:
+    description: Email notified on bootstrap job / pipeline failure
+    default: data-eng-alerts@apexmfg.example
+
+# -----------------------------------------------------------------------------
+# Resources — one Lakeflow Declarative Pipeline (bronze -> silver) and one
+# bootstrap job (DDL, then reference-seed load). Gold marts are materialized
+# views created by the DDL step, not by the pipeline (analysts own that SQL).
+# -----------------------------------------------------------------------------
+resources:
+  jobs:
+    apex_bootstrap:
+      name: apex_bootstrap_${bundle.target}
+      description: >-
+        One-time-per-env setup: creates catalog/schemas/ref tables/gold MVs, then loads
+        the Git-versioned crosswalk seeds from src/mappings/*.csv into ref.*. Re-runnable:
+        the DDL is idempotent (CREATE ... IF NOT EXISTS) and the seed load is a full
+        overwrite of each ref table from its CSV.
+      job_clusters:
+        - job_cluster_key: apex_small
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: ${var.node_type_id}
+            data_security_mode: SINGLE_USER # required for UC table writes from a notebook task
+            autoscale:
+              min_workers: 1
+              max_workers: 2
+            custom_tags:
+              project: apex-lakehouse
+              env: ${bundle.target}
+      tasks:
+        - task_key: create_catalog_and_ref_schema
+          sql_task:
+            warehouse_id: ${var.sql_warehouse_id}
+            file:
+              path: ./src/ddl/01_catalog_and_ref.sql
+            parameters:
+              catalog: ${var.catalog}
+        - task_key: load_reference_seeds
+          depends_on:
+            - task_key: create_catalog_and_ref_schema
+          job_cluster_key: apex_small
+          notebook_task:
+            notebook_path: ./notebooks/00_setup_seeds.py
+            base_parameters:
+              catalog: ${var.catalog}
+              # workspace.file_path = the synced bundle source root in the workspace,
+              # so this always resolves regardless of which workspace path the bundle
+              # was deployed to.
+              mappings_path: ${workspace.file_path}/src/mappings
+      email_notifications:
+        on_failure:
+          - ${var.notification_email}
+
+  pipelines:
+    apex_pipeline:
+      name: apex_lakehouse_${bundle.target}
+      catalog: ${var.catalog}
+      # Fallback default schema for any unqualified table name. Every table in
+      # src/pipelines/apex_pipeline.py is already schema-qualified in code
+      # ("bronze.x" / "silver.x"), so this is never actually used — set for safety only.
+      # NOTE: current Lakeflow docs use `schema`; older DLT CLI versions expect `target`
+      # (deprecated alias, same meaning) — swap the key below if `schema` is rejected.
+      schema: bronze
+      serverless: true
+      photon: true
+      channel: CURRENT
+      configuration:
+        apex.raw_path: ${var.raw_path}
+        apex.catalog: ${var.catalog}
+      libraries:
+        - file:
+            path: ./src/pipelines/apex_pipeline.py
+      # Triggered (not continuous) by default: Auto Loader + a 6h watermark absorbs
+      # PI store-and-forward replay (docs/04_short_answers.md Q5) on a schedule; sub-
+      # minute Line-3 vibration alerting is a SEPARATE continuous Structured Streaming
+      # job straight off the MQTT/Kafka bridge (docs/01_architecture.md), not this
+      # pipeline — bundling both into one continuous DLT pipeline would force the slow
+      # batch sources (SAP, LIMS) onto the same always-on billing model as the 1kHz feed.
+      continuous: false
+
+# -----------------------------------------------------------------------------
+# Targets
+# -----------------------------------------------------------------------------
+targets:
+  dev:
+    mode: development # DAB prefixes resource names with the deploying user + pauses schedules
+    default: true
+    variables:
+      catalog: apex_dev
+      raw_path: /Volumes/apex_dev/bronze/landing
+      sql_warehouse_id: "" # fill in: dev serverless SQL warehouse id
+    workspace:
+      host: https://<dev-workspace>.cloud.databricks.com # placeholder — fill in real workspace URL
+    resources:
+      pipelines:
+        apex_pipeline:
+          development: true # use dev preview channel behavior / faster iteration, less validation
+
+  staging:
+    mode: production
+    variables:
+      catalog: apex_stg
+      raw_path: /Volumes/apex_stg/bronze/landing
+      sql_warehouse_id: "" # fill in: staging serverless SQL warehouse id
+    workspace:
+      host: https://<staging-workspace>.cloud.databricks.com
+    resources:
+      pipelines:
+        apex_pipeline:
+          development: false
+          continuous: true # staging mirrors prod's always-on shape so cutover isn't a surprise
+
+  prod:
+    mode: production
+    variables:
+      catalog: apex_prod
+      raw_path: /Volumes/apex_prod/bronze/landing
+      sql_warehouse_id: "" # fill in: prod serverless SQL warehouse id
+    workspace:
+      host: https://<prod-workspace>.cloud.databricks.com
+    # `run_as: service_principal_name: <app-id>` is intentionally omitted here.
+    # A blank/placeholder value would fail `databricks bundle validate`, and
+    # prod should run as a provisioned service principal, not a human account —
+    # add the block once one exists. Tracked as a gap in README-SOLUTION.md.
+    resources:
+      jobs:
+        apex_bootstrap:
+          email_notifications:
+            on_failure:
+              - data-eng-oncall@apexmfg.example # prod pages oncall, not the shared dev list
+      pipelines:
+        apex_pipeline:
+          development: false
+          continuous: true

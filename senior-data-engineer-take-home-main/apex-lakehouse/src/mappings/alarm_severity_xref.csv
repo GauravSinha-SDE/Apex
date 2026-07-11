@@ -1,0 +1,9 @@
+source_severity,severity_norm,severity_rank
+1,CRITICAL,1
+2,HIGH,2
+3,MEDIUM,3
+4,LOW,4
+CRITICAL,CRITICAL,1
+HIGH,HIGH,2
+MEDIUM,MEDIUM,3
+LOW,LOW,4

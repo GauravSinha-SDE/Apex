@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Databricks
+.databricks/
+.ipynb_checkpoints/
+
+# Local data (sample extracts live in a UC Volume, not in git)
+data/
+*.csv.bak
+
+# OS
+.DS_Store
+Thumbs.db

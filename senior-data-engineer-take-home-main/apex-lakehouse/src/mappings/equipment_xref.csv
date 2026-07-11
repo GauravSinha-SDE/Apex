@@ -1,0 +1,31 @@
+equipment_key,source_equipment_id,sap_asset_number,equipment_name,equipment_type,line_id,criticality,is_active
+EQP-101,EQ-101,A-101,Line 1 Filler,Filling Machine,1,A,True
+EQP-102,EQ-102,A-102,Line 1 Capper,Capping Machine,1,A,True
+EQP-103,EQ-103,A-103,Line 1 Labeler,Labeler,1,B,True
+EQP-104,EQ-104,A-104,Line 1 Pasteurizer,Pasteurizer,1,A,True
+EQP-105,EQ-105,A-105,Line 1 Conveyor System,Conveyor,1,B,True
+EQP-106,EQ-106,A-106,Line 1 Case Packer,Case Packer,1,B,True
+EQP-107,EQ-107,A-107,Line 1 Palletizer,Palletizer,1,C,True
+EQP-108,EQ-108,A-108,Line 1 Rinser,Rinser,1,B,True
+EQP-109,EQ-109,A-109,CIP Skid 1,CIP Unit,1,A,True
+EQP-201,EQUIP_201,A-201,Line 2 Filler,Filling Machine,2,A,True
+EQP-202,EQUIP_202,A-202,Line 2 Capper,Capping Machine,2,A,True
+EQP-203,EQUIP_203,A-203,Line 2 Labeler,Labeler,2,B,True
+EQP-204,EQUIP_204,A-204,Line 2 Conveyor System,Conveyor,2,B,True
+EQP-205,EQUIP_205,A-205,Line 2 Case Packer,Case Packer,2,B,True
+EQP-206,EQUIP_206,A-206,Line 2 Palletizer,Palletizer,2,C,True
+EQP-207,EQUIP_207,A-207,Line 2 Rinser,Rinser,2,B,True
+EQP-208,EQUIP_208,A-208,CIP Skid 2,CIP Unit,2,A,True
+EQP-301,301,A-301,Line 3 Filler,Filling Machine,3,A,True
+EQP-302,302,A-302,Line 3 Capper,Capping Machine,3,A,True
+EQP-303,303,A-303,Line 3 Labeler,Labeler,3,B,True
+EQP-304,304,A-304,Line 3 Pasteurizer,Pasteurizer,3,A,True
+EQP-305,305,A-305,Line 3 Conveyor System,Conveyor,3,B,True
+EQP-306,306,A-306,Line 3 Case Packer,Case Packer,3,B,True
+EQP-307,307,A-307,Line 3 Palletizer,Palletizer,3,B,True
+EQP-308,308,A-308,Line 3 Rinser,Rinser,3,B,True
+EQP-309,309,A-309,CIP Skid 3,CIP Unit,3,A,True
+EQP-110,EQ-110,A-110,Depalletizer 1,Depalletizer,1,B,False
+EQP-111,EQ-111,A-111,Depalletizer 1 (New),Depalletizer,1,B,True
+EQP-209,EQUIP_209,A-209,Depalletizer 2,Depalletizer,2,B,True
+EQP-310,310,A-310,Depalletizer 3,Depalletizer,3,B,True

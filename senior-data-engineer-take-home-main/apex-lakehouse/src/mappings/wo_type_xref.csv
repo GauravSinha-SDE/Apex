@@ -1,0 +1,5 @@
+source_type,type_norm,planning_category
+Preventive,PREVENTIVE,PLANNED
+PM,PREVENTIVE,PLANNED
+Corrective,CORRECTIVE,UNPLANNED
+Breakdown,BREAKDOWN,UNPLANNED
