@@ -14,12 +14,12 @@ Genie is not pointed at `silver` or `bronze` — two reasons:
 
 Concretely: a **Genie space** per plant-manager audience (could be one shared space with
 row-level security doing the scoping, rather than one space per line — see Part 2E), backed
-by five marts covering 6 of the 7 plant KPIs (`docs/apex_plant_context.md`) —
+by six marts covering 6 of the 7 plant KPIs (`docs/apex_plant_context.md`) —
 `gold.oee_daily`, `gold.equipment_reliability`, `gold.scrap_rate_daily`,
-`gold.changeover_time`, `gold.first_pass_yield` — plus `gold.alarm_summary` and a
-critical-work-orders mart still on the "what's next" list (§5). CIP Cycle Time has no
-mart at all: the sample extracts contain no CIP cycle timing signal anywhere (checked —
-see `docs/02_data_quality.md`), so there's nothing to build it from, not a shortcut. Each
+`gold.changeover_time`, `gold.first_pass_yield`, `gold.critical_work_orders` — plus
+`gold.alarm_summary` still on the "what's next" list (§5). CIP Cycle Time has no mart at
+all: the sample extracts contain no CIP cycle timing signal anywhere (checked — see
+`docs/02_data_quality.md`), so there's nothing to build it from, not a shortcut. Each
 table/view gets **Genie table + column instructions** (comments), **trusted example
 questions**, and (for the harder joins) **trusted SQL** — the three levers Genie actually
 exposes today for steering NL-to-SQL, and I'm treating them as the whole toolkit rather than
@@ -74,13 +74,14 @@ because they're more convincing than describing the methodology abstractly:
 | 2 | Equipment with >3 unplanned stops this month | **Wrong on the first pass, then fixed.** `gold.equipment_reliability` originally had no time dimension — Genie answered with the all-time cumulative count, presented with full confidence, mislabeled as "this month." This is worse than a decline: a plant manager would trust it. Fixed by adding a `stop_month` grain to the mart (§5 has the before/after). |
 | 3 | Quality parameter most correlated with scrap rate on Line 1 | **Correctly declined** — no correlation-ready join existed at the time; `gold.scrap_rate_daily` now exists but a proper parameter-vs-scrap-rate correlation mart still doesn't (§5). |
 | 4 | Fill weight trend for SKU CSD-001 | **Correctly declined** — genuine data-model gap, not a missing mart: `quality_checks.batch_id` has no foreign key to `production_runs.product_sku` in the source extracts, so this can't be built without inferring a batch-to-run mapping (e.g. by date+line proximity), which I haven't done and wouldn't want Genie improvising either. |
-| 5 | Technician who resolved the most critical work orders last week | **Correctly declined** — no gold mart yet exposes `silver.maintenance_work_orders`' technician/priority columns; `docs/02_data_quality.md`'s DQ-01/DQ-10 fixes are already in Silver, this is purely a missing Gold mart (§5). |
+| 5 | Technician who resolved the most critical work orders last week | **Correctly declined at the time, then closed.** No gold mart yet exposed `silver.maintenance_work_orders`' technician/priority columns; `docs/02_data_quality.md`'s DQ-01/DQ-10 fixes were already in Silver, so this was purely a missing Gold mart — `gold.critical_work_orders` now exists (per-technician, per-plant-local-week, filtered to `priority = 'Critical'` and `work_order_status = 'COMPLETED'`), re-verified against real data (e.g. T-Nguyen resolved 2 critical WOs the week of 2026-02-16). |
 
-**Takeaway:** 4 of 5 declines were the *correct* behavior (Gold-only scoping doing its job —
-Genie had no ungoverned table to fall back on and guess from). One was a genuine, confidently-wrong
-answer, caused by a real gap in the mart's design (no time dimension), not by Genie
-misbehaving — and it's now fixed. This is exactly the class of bug a verification loop is
-supposed to catch, and exactly why I ran one instead of only describing it.
+**Takeaway:** every decline observed was *correct* behavior (Gold-only scoping doing its job —
+Genie had no ungoverned table to fall back on and guess from) except one, which was a genuine,
+confidently-wrong answer caused by a real gap in the mart's design (no time dimension), not by
+Genie misbehaving — and it's now fixed. Two of five questions (3 and 4) are still open gaps,
+not bugs — see §5. This is exactly the class of issue a verification loop is supposed to
+catch, and exactly why I ran one instead of only describing it.
 
 ## 3. The "status" ambiguity — architecture-level fix
 
@@ -172,20 +173,20 @@ scrap, rejects, waste                -> gold.scrap_rate_daily.scrap_rate
 first-pass yield, right-first-time   -> gold.first_pass_yield.first_pass_yield
 changeover                           -> gold.changeover_time.changeover_minutes (per-event
                                         grain, one row per SKU switch on a line)
+critical work order                  -> priority = 'Critical' rows in
+                                        gold.critical_work_orders (per-technician,
+                                        per-plant-local-week grain, resolved_week is the
+                                        completion week, not the creation week)
 ```
 
 ## 5. What I'd add with more time
 
 Built and live-tested during this exercise: `gold.oee_daily`, `gold.equipment_reliability`
-(now per-month), `gold.scrap_rate_daily`, `gold.changeover_time`, `gold.first_pass_yield` —
-6 of the 7 plant KPIs, with `docs/02_data_quality.md`'s DQ-14 (Line 3's overlapping run
-windows) found and handled along the way. What's still missing:
+(now per-month), `gold.scrap_rate_daily`, `gold.changeover_time`, `gold.first_pass_yield`,
+`gold.critical_work_orders` — 6 of the 7 plant KPIs, closing 3 of the brief's 5 example
+questions (1, 2, 5), with `docs/02_data_quality.md`'s DQ-14 (Line 3's overlapping run windows)
+found and handled along the way. What's still missing:
 
-- **`gold.critical_work_orders`** (or extend `equipment_reliability`) exposing
-  `silver.maintenance_work_orders`' `technician`/`priority` columns — closes example
-  question 5 ("which technician resolved the most critical work orders"). The Silver-layer
-  fix is already done (DQ-01/DQ-10); this is purely a missing Gold mart, the easiest of the
-  remaining gaps.
 - **A quality-parameter-vs-scrap-rate correlation mart** — closes example question 3.
   `gold.scrap_rate_daily` exists now, but correlating it against `quality_checks.parameter`
   values needs a proper per-line-day pivot/join, not just two separate marts sitting next to

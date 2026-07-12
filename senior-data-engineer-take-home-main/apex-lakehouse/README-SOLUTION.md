@@ -13,10 +13,10 @@ has the file-by-file map and setup/run order.
 
 `databricks.yml` and the full DDL/pipeline chain were deployed to a real Databricks workspace
 and run end-to-end — catalog/schema/ref DDL, seed load, a full Lakeflow pipeline run against
-the six sample extracts, and **five gold materialized views** (`oee_daily`,
-`equipment_reliability`, `scrap_rate_daily`, `changeover_time`, `first_pass_yield`) — with real
-row counts and real KPI numbers coming out the other end. That surfaced real bugs a code read
-wouldn't have caught, in two rounds:
+the six sample extracts, and **six gold materialized views** (`oee_daily`,
+`equipment_reliability`, `scrap_rate_daily`, `changeover_time`, `first_pass_yield`,
+`critical_work_orders`) — with real row counts and real KPI numbers coming out the other end.
+That surfaced real bugs a code read wouldn't have caught, in two rounds:
 
 **Round 1 — deploying the platform:** a schema-qualification mismatch between the pipeline and
 the gold DDL; a `${catalog}`-substitution assumption that's actually notebook-widget-only
@@ -84,12 +84,12 @@ account in `docs/03_nl_analytics.md` §2a and `docs/02_data_quality.md` DQ-14.
   choice, not a limitation I ran out of time to fix. Reasoning in `docs/03_nl_analytics.md` §1
   and `docs/01_architecture.md` §E.
 - **Gold marts built: `oee_daily`, `equipment_reliability`, `scrap_rate_daily`,
-  `changeover_time`, `first_pass_yield`** — 6 of the plant's 7 KPIs (CIP Cycle Time has no
-  source signal in the sample data at all). Two of the five example questions in the brief
-  (critical work orders, quality-parameter correlation) still don't have a purpose-built
-  mart, and one (fill-weight trend by SKU) is blocked on a genuine source-data-model gap, not
-  a missing mart — all three are the top items in "what's next" below, not something I
-  considered out-of-scope.
+  `changeover_time`, `first_pass_yield`, `critical_work_orders`** — 6 of the plant's 7 KPIs
+  (CIP Cycle Time has no source signal in the sample data at all), closing 3 of the brief's 5
+  example questions. One remaining question (quality-parameter correlation) still doesn't have
+  a purpose-built mart, and one (fill-weight trend by SKU) is blocked on a genuine
+  source-data-model gap, not a missing mart — both are the top items in "what's next" below,
+  not something I considered out-of-scope.
 - **Fixed one real inconsistency in already-drafted work rather than leaving it**:
   `src/pipelines/apex_pipeline.py` originally published tables as `bronze_x`/`silver_x` in one
   implicit schema; the gold materialized views already queried `${catalog}.silver.x`
@@ -134,12 +134,13 @@ account in `docs/03_nl_analytics.md` §2a and `docs/02_data_quality.md` DQ-14.
 
 Roughly in priority order:
 
-1. **`gold.critical_work_orders`** (technician/priority from `silver.maintenance_work_orders`,
-   Silver-layer fix already done) and **a quality-parameter-vs-scrap-rate correlation mart** —
-   the two remaining pieces of the brief's 5 example questions. A **batch-to-run mapping**
-   (`quality_checks.batch_id` → `production_runs.product_sku`) is the third gap but is a
-   source-data-model problem, not a missing mart — see `docs/03_nl_analytics.md` §5 for why I
-   wouldn't want to infer it. `gold.alarm_summary` also still missing.
+1. **A quality-parameter-vs-scrap-rate correlation mart** — the one remaining *buildable* gap
+   in the brief's 5 example questions (`gold.critical_work_orders` closed the technician
+   question; both are live-tested). A **batch-to-run mapping**
+   (`quality_checks.batch_id` → `production_runs.product_sku`) closes the fill-weight-by-SKU
+   question but is a source-data-model problem, not a missing mart — see
+   `docs/03_nl_analytics.md` §5 for why I wouldn't want to infer it. `gold.alarm_summary` also
+   still missing.
 2. **`ref.product_sku` seed CSV** — the DDL already defines the table (used to validate the
    volume-scale fix, DQ-11) but no seed file exists yet; `00_setup_seeds.py` will pick it up
    automatically once added (that's why it's written generically rather than with a hardcoded
