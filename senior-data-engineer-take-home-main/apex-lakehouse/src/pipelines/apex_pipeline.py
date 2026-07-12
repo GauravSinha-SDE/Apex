@@ -46,10 +46,19 @@ def parse_multi_ts(col):
     )
 
 def with_line_id(df, src_col):
+    """Normalize any observed line encoding (src_col) to ref.line_xref's line_id INT.
+    Every caller passes src_col="line_id" — the source's own raw line_id column
+    (string, e.g. 'Line 1'/'L1'/bare '2') collides by name with the xref's conformed
+    line_id (INT), so it has to be dropped explicitly post-join or downstream
+    `.select("line_id")` calls fail with AMBIGUOUS_REFERENCE (found by actually
+    running the pipeline). df[src_col] identifies the original column by expression
+    id, not name, so this drops only the raw one even though both are named line_id."""
     line_xref = spark.table(f"{CATALOG}.ref.line_xref")
-    return (df.join(F.broadcast(line_xref),
-                    df[src_col] == line_xref.source_line_value, "left")
-              .drop("source_line_value"))
+    raw_col = df[src_col]
+    joined = df.join(F.broadcast(line_xref), raw_col == line_xref.source_line_value, "left")
+    if src_col == "line_id":
+        joined = joined.drop(raw_col)
+    return joined.drop("source_line_value")
 
 def with_equipment_key(df, src_col, via="source_equipment_id"):
     """Resolve any equipment alias (SCADA id or SAP asset number) to the conformed key."""
@@ -61,16 +70,18 @@ def with_equipment_key(df, src_col, via="source_equipment_id"):
 # BRONZE — one pattern per source file family
 # ---------------------------------------------------------------------------
 
-def bronze_table(name, path_glob, fmt="csv"):
+def bronze_table(name, path_glob, fmt="csv", extra_options=None):
     @dlt.table(name=f"bronze.{name}",   # schema-qualified: publishes into ${CATALOG}.bronze, not a single default schema
                comment=f"Raw {name} landing. All STRING, append-only.",
                table_properties={"quality": "bronze"})
     def _t():
-        return (spark.readStream.format("cloudFiles")
-                .option("cloudFiles.format", fmt)
-                .option("cloudFiles.inferColumnTypes", "false")   # everything STRING
-                .option("cloudFiles.schemaEvolutionMode", "rescue")
-                .load(f"{RAW}/{path_glob}")
+        reader = (spark.readStream.format("cloudFiles")
+                  .option("cloudFiles.format", fmt)
+                  .option("cloudFiles.inferColumnTypes", "false")   # everything STRING
+                  .option("cloudFiles.schemaEvolutionMode", "rescue"))
+        for k, v in (extra_options or {}).items():
+            reader = reader.option(k, v)
+        return (reader.load(f"{RAW}/{path_glob}")
                 .withColumn("_ingest_ts", F.current_timestamp())
                 .withColumn("_source_file", F.col("_metadata.file_path")))
     return _t
@@ -80,17 +91,31 @@ bronze_table("production_runs", "production_runs/*")
 bronze_table("maintenance_logs", "maintenance_logs/*")
 bronze_table("quality_checks", "quality_checks/*")
 bronze_table("alarms_events", "alarms_events/*")
-bronze_table("equipment_registry", "equipment_registry/*", fmt="json")
+# multiLine: the source export is a pretty-printed JSON array ([ {...}, {...} ]),
+# not newline-delimited JSON — Auto Loader's JSON schema inference fails on it
+# without this (found by actually running the pipeline against the sample export).
+bronze_table("equipment_registry", "equipment_registry/*", fmt="json",
+             extra_options={"multiLine": "true"})
 
 # ---------------------------------------------------------------------------
 # SILVER — sensor readings (highest volume, most fixes)
 # ---------------------------------------------------------------------------
 
-@dlt.table(name="silver.sensor_readings",   # matches gold DDL's ${catalog}.silver.sensor_readings target shape
+@dlt.table(name="silver.sensor_readings",
            comment="Cleaned telemetry. UTC timestamps, conformed equipment, sentinel-scrubbed.",
+           # Physical design (docs/01_architecture.md Part 1c): Liquid Clustering, not
+           # hive partition+ZORDER. This decorator is the ONE place these properties are
+           # actually enforced — the matching CREATE TABLE block that used to live in
+           # src/ddl/01_catalog_and_ref.sql was dead documentation (DLT owns this table
+           # and creates it itself; a separate CREATE TABLE never actually ran against it).
            cluster_by=["equipment_key", "sensor_tag", "reading_ts"],
            table_properties={"quality": "silver",
-                             "delta.enableDeletionVectors": "true"})
+                             "delta.enableDeletionVectors": "true",
+                             "delta.autoOptimize.optimizeWrite": "true",
+                             "delta.tuneFileSizesForRewrites": "true",
+                             "delta.dataSkippingStatsColumns": "reading_ts,equipment_key,sensor_tag,value,opc_quality_code",
+                             "delta.deletedFileRetentionDuration": "interval 7 days",
+                             "delta.logRetentionDuration": "interval 30 days"})
 @dlt.expect_or_drop("valid_timestamp", "reading_ts IS NOT NULL")
 @dlt.expect_or_drop("known_equipment", "equipment_key IS NOT NULL")
 @dlt.expect("value_present", "value IS NOT NULL")            # warn-only: tracked, kept
@@ -143,6 +168,9 @@ def silver_production_runs():
     df = (df
           .withColumn("start_ts", parse_multi_ts("start_time"))
           .withColumn("end_ts", parse_multi_ts("end_time"))
+          # Plant-local column, same pattern as silver.sensor_readings.reading_ts_local —
+          # gold.oee_daily groups by shift/production date in plant-local time, not UTC.
+          .withColumn("start_ts_local", F.from_utc_timestamp(F.col("start_ts"), "America/Chicago"))
           .withColumn("actual_volume_l",
                       F.col("actual_volume").cast("double") * unit_factor * 1000)  # DQ-11 scale
           .withColumn("target_volume_l",
@@ -168,12 +196,18 @@ def silver_maintenance_work_orders():
     return (df
             .withColumn("created_ts", parse_multi_ts("created_date"))
             .withColumn("completed_ts", parse_multi_ts("completed_date"))
+            # Plant-local columns, same pattern as silver.sensor_readings.reading_ts_local —
+            # gold.oee_daily groups unplanned downtime by plant-local production date;
+            # gold.critical_work_orders groups resolved-critical-WO counts by plant-local week.
+            .withColumn("created_ts_local", F.from_utc_timestamp(F.col("created_ts"), "America/Chicago"))
+            .withColumn("completed_ts_local", F.from_utc_timestamp(F.col("completed_ts"), "America/Chicago"))
             .withColumn("downtime_minutes", F.col("downtime_minutes").cast("int"))
             .withColumnRenamed("status", "work_order_status")            # DQ-13
             .select("work_order_id", "equipment_key", "description",
                     "work_order_status", "priority",
                     F.col("type_norm").alias("maintenance_type"),
-                    "planning_category", "created_ts", "completed_ts",
+                    "planning_category", "created_ts", "created_ts_local",
+                    "completed_ts", "completed_ts_local",
                     "downtime_minutes", "technician", "parts_used"))
 
 # ---------------------------------------------------------------------------
@@ -205,6 +239,9 @@ def silver_quality_checks():
     df = dlt.read_stream("bronze.quality_checks")
     df = with_line_id(df, "line_id")            # DQ-02: handles 'Line 1', 'Line-2', '3'
     return (df.withColumn("check_ts", parse_multi_ts("check_timestamp"))
+              # Plant-local column, same pattern as the other silver tables — gold.first_pass_yield
+              # groups by plant-local check date, not UTC.
+              .withColumn("check_ts_local", F.from_utc_timestamp(F.col("check_ts"), "America/Chicago"))
               .withColumn("value", F.col("value").cast("double"))
               .withColumn("lower_spec", F.col("lower_spec").cast("double"))
               .withColumn("upper_spec", F.col("upper_spec").cast("double"))

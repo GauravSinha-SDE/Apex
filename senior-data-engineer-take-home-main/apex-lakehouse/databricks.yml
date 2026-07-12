@@ -1,11 +1,13 @@
 # =============================================================================
 # Apex Manufacturing Lakehouse — Databricks Asset Bundle
 # Part 2D deliverable: dev/staging/prod deployment of the Lakeflow Declarative
-# Pipeline, a bootstrap job (DDL + reference-seed load), and job cluster config.
+# Pipeline, a bootstrap job (DDL + seeds + one pipeline run + gold marts, in
+# correct dependency order), and job cluster config.
 #
-# Deploy:  databricks bundle deploy -t dev
-# Run once per env before the pipeline: databricks bundle run apex_bootstrap -t dev
-# Then:    databricks bundle run apex_pipeline -t dev
+# Deploy:            databricks bundle deploy -t dev
+# Full env setup:     databricks bundle run apex_bootstrap -t dev
+# Subsequent pipeline runs (e.g. after new data lands), independent of bootstrap:
+#                     databricks bundle run apex_pipeline -t dev
 # =============================================================================
 
 bundle:
@@ -14,8 +16,16 @@ bundle:
 # -----------------------------------------------------------------------------
 # Variables — everything env-specific is injected here, nothing hardcoded below.
 # catalog / raw_path / sql_warehouse_id have NO default: they are required and
-# must be supplied per target (below) or via `--var`, so a dev mistake can't
-# silently point at a prod catalog.
+# must be supplied per target (below) or via `--var`. All three DDL files
+# (01_catalog_and_ref.sql, 02a/02b gold marts) run as native sql_task.file
+# against a warehouse, with `catalog` bound through a named parameter — not
+# `${catalog}` substitution, which is Databricks SQL/notebook widget syntax a
+# sql_task.file never resolves (the literal string reaches the warehouse and
+# fails to parse). A notebook-based workaround was tried and abandoned —
+# see src/ddl/02a_gold_oee_daily.sql's header for the full, live-tested account
+# of why, including a second dead end (CREATE MATERIALIZED VIEW rejected on
+# generic/notebook compute; a REST-API-from-notebook workaround for that hung
+# indefinitely on this environment's network egress).
 # -----------------------------------------------------------------------------
 variables:
   catalog:
@@ -26,10 +36,8 @@ variables:
       e.g. /Volumes/apex_dev/bronze/landing
   sql_warehouse_id:
     description: >-
-      Serverless SQL warehouse used to run src/ddl/01_catalog_and_ref.sql (catalog/schema
-      DDL + ref table DDL + gold materialized views). Not committed with a default — set
-      per workspace via `databricks bundle deploy -t <env> --var="sql_warehouse_id=<id>"`
-      or a gitignored .databricks/bundle.override.yml.
+      Serverless SQL warehouse used to run both src/ddl/*.sql files. Set per workspace
+      via `databricks bundle deploy -t <env> --var="sql_warehouse_id=<id>"`.
   node_type_id:
     description: >-
       Classic job-cluster node type for the bootstrap job. Default assumes Azure, since
@@ -41,30 +49,36 @@ variables:
 
 # -----------------------------------------------------------------------------
 # Resources — one Lakeflow Declarative Pipeline (bronze -> silver) and one
-# bootstrap job (DDL, then reference-seed load). Gold marts are materialized
-# views created by the DDL step, not by the pipeline (analysts own that SQL).
+# bootstrap job. Gold marts are materialized views (src/ddl/02a_* .. 02e_*), NOT
+# created by the pipeline — but they DO read tables the pipeline creates
+# (silver.production_runs, silver.maintenance_work_orders, silver.quality_checks),
+# so they can only be created after the pipeline's first run, not alongside the
+# pre-pipeline DDL. apex_bootstrap sequences this in true dependency order:
+#   schemas/ref tables -> seed load -> pipeline run -> gold marts (sequential —
+#   see the create_gold_* tasks below for why not parallel).
+# For staging/prod, where the pipeline runs continuous (not triggered), the
+# pipeline_task below starts/confirms the pipeline is running rather than
+# waiting for one batch to finish — re-run just the five create_gold_* tasks
+# manually once the first streaming batch has landed data.
 # -----------------------------------------------------------------------------
 resources:
   jobs:
     apex_bootstrap:
       name: apex_bootstrap_${bundle.target}
       description: >-
-        One-time-per-env setup: creates catalog/schemas/ref tables/gold MVs, then loads
-        the Git-versioned crosswalk seeds from src/mappings/*.csv into ref.*. Re-runnable:
-        the DDL is idempotent (CREATE ... IF NOT EXISTS) and the seed load is a full
-        overwrite of each ref table from its CSV.
-      job_clusters:
-        - job_cluster_key: apex_small
-          new_cluster:
-            spark_version: 15.4.x-scala2.12
-            node_type_id: ${var.node_type_id}
-            data_security_mode: SINGLE_USER # required for UC table writes from a notebook task
-            autoscale:
-              min_workers: 1
-              max_workers: 2
-            custom_tags:
-              project: apex-lakehouse
-              env: ${bundle.target}
+        One-time-per-env setup: creates catalog/schemas/ref tables, loads the
+        Git-versioned crosswalk seeds from src/mappings/*.csv into ref.*, runs the
+        Lakeflow pipeline once, then creates the gold KPI marts that depend on its
+        output. Re-runnable: the DDL is idempotent (CREATE ... IF NOT EXISTS) and the
+        seed load is a full overwrite of each ref table from its CSV.
+      # Base job has NO job_clusters block and no task references classic compute —
+      # every task runs serverless. staging/prod ADD a job_clusters block AND a
+      # job_cluster_key reference on load_reference_seeds via their target overrides
+      # below, switching that one task to a classic cluster there. This has to be an
+      # ADD, not dev overriding-away-from a base job_clusters block: proven out live —
+      # on a serverless-only workspace, a job create request was rejected purely for
+      # having an unreferenced job_clusters entry present, even with zero tasks
+      # pointing at it. The block itself, not just a reference to it, has to be absent.
       tasks:
         - task_key: create_catalog_and_ref_schema
           sql_task:
@@ -76,7 +90,6 @@ resources:
         - task_key: load_reference_seeds
           depends_on:
             - task_key: create_catalog_and_ref_schema
-          job_cluster_key: apex_small
           notebook_task:
             notebook_path: ./notebooks/00_setup_seeds.py
             base_parameters:
@@ -85,6 +98,75 @@ resources:
               # so this always resolves regardless of which workspace path the bundle
               # was deployed to.
               mappings_path: ${workspace.file_path}/src/mappings
+        - task_key: run_pipeline
+          depends_on:
+            - task_key: load_reference_seeds
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.apex_pipeline.id}
+        # Five separate tasks, not one file each: Jobs' sql_task.file requires
+        # exactly one CREATE MATERIALIZED VIEW per file (see
+        # src/ddl/02a_gold_oee_daily.sql's header). Chained sequentially, not
+        # parallel off run_pipeline: each MV is backed by an implicit DBSQL-type
+        # pipeline, and this workspace tier caps concurrent DBSQL pipelines at 1 —
+        # running two at once hit QUOTA_EXCEEDED_EXCEPTION (found by actually
+        # running this in parallel). A higher-tier workspace could parallelize
+        # these; sequencing is the safe default that works everywhere. Covers 6 of
+        # 7 plant KPIs (docs/apex_plant_context.md) — CIP Cycle Time has no source
+        # data in this extract (see docs/02_data_quality.md), so no mart for it.
+        - task_key: create_gold_oee_daily
+          depends_on:
+            - task_key: run_pipeline
+          sql_task:
+            warehouse_id: ${var.sql_warehouse_id}
+            file:
+              path: ./src/ddl/02a_gold_oee_daily.sql
+            parameters:
+              catalog: ${var.catalog}
+        - task_key: create_gold_equipment_reliability
+          depends_on:
+            - task_key: create_gold_oee_daily
+          sql_task:
+            warehouse_id: ${var.sql_warehouse_id}
+            file:
+              path: ./src/ddl/02b_gold_equipment_reliability.sql
+            parameters:
+              catalog: ${var.catalog}
+        - task_key: create_gold_scrap_rate_daily
+          depends_on:
+            - task_key: create_gold_equipment_reliability
+          sql_task:
+            warehouse_id: ${var.sql_warehouse_id}
+            file:
+              path: ./src/ddl/02c_gold_scrap_rate_daily.sql
+            parameters:
+              catalog: ${var.catalog}
+        - task_key: create_gold_changeover_time
+          depends_on:
+            - task_key: create_gold_scrap_rate_daily
+          sql_task:
+            warehouse_id: ${var.sql_warehouse_id}
+            file:
+              path: ./src/ddl/02d_gold_changeover_time.sql
+            parameters:
+              catalog: ${var.catalog}
+        - task_key: create_gold_first_pass_yield
+          depends_on:
+            - task_key: create_gold_changeover_time
+          sql_task:
+            warehouse_id: ${var.sql_warehouse_id}
+            file:
+              path: ./src/ddl/02e_gold_first_pass_yield.sql
+            parameters:
+              catalog: ${var.catalog}
+        - task_key: create_gold_critical_work_orders
+          depends_on:
+            - task_key: create_gold_first_pass_yield
+          sql_task:
+            warehouse_id: ${var.sql_warehouse_id}
+            file:
+              path: ./src/ddl/02f_gold_critical_work_orders.sql
+            parameters:
+              catalog: ${var.catalog}
       email_notifications:
         on_failure:
           - ${var.notification_email}
@@ -118,6 +200,17 @@ resources:
 
 # -----------------------------------------------------------------------------
 # Targets
+#
+# workspace.host is deliberately NOT set per target: the Databricks CLI resolves
+# host + auth from `--profile <name>` (or DATABRICKS_HOST/DATABRICKS_TOKEN env vars)
+# at deploy time, one profile per environment's workspace, e.g.:
+#   databricks bundle deploy -t dev     --profile apex-dev-workspace
+#   databricks bundle deploy -t staging --profile apex-stg-workspace
+#   databricks bundle deploy -t prod    --profile apex-prod-workspace
+# This also sidesteps a real CLI constraint: workspace.host is resolved during
+# auth setup, before ${var...} substitution runs, so it can't be a bundle variable
+# either — profile-per-environment is the actual supported mechanism, not a
+# workaround.
 # -----------------------------------------------------------------------------
 targets:
   dev:
@@ -127,8 +220,6 @@ targets:
       catalog: apex_dev
       raw_path: /Volumes/apex_dev/bronze/landing
       sql_warehouse_id: "" # fill in: dev serverless SQL warehouse id
-    workspace:
-      host: https://<dev-workspace>.cloud.databricks.com # placeholder — fill in real workspace URL
     resources:
       pipelines:
         apex_pipeline:
@@ -140,9 +231,24 @@ targets:
       catalog: apex_stg
       raw_path: /Volumes/apex_stg/bronze/landing
       sql_warehouse_id: "" # fill in: staging serverless SQL warehouse id
-    workspace:
-      host: https://<staging-workspace>.cloud.databricks.com
     resources:
+      jobs:
+        apex_bootstrap:
+          job_clusters:
+            - job_cluster_key: apex_small
+              new_cluster:
+                spark_version: 15.4.x-scala2.12
+                node_type_id: ${var.node_type_id}
+                data_security_mode: SINGLE_USER
+                autoscale:
+                  min_workers: 1
+                  max_workers: 2
+                custom_tags:
+                  project: apex-lakehouse
+                  env: ${bundle.target}
+          tasks:
+            - task_key: load_reference_seeds
+              job_cluster_key: apex_small # classic compute for staging, unlike dev's serverless default
       pipelines:
         apex_pipeline:
           development: false
@@ -154,8 +260,6 @@ targets:
       catalog: apex_prod
       raw_path: /Volumes/apex_prod/bronze/landing
       sql_warehouse_id: "" # fill in: prod serverless SQL warehouse id
-    workspace:
-      host: https://<prod-workspace>.cloud.databricks.com
     # `run_as: service_principal_name: <app-id>` is intentionally omitted here.
     # A blank/placeholder value would fail `databricks bundle validate`, and
     # prod should run as a provisioned service principal, not a human account —
@@ -163,6 +267,21 @@ targets:
     resources:
       jobs:
         apex_bootstrap:
+          job_clusters:
+            - job_cluster_key: apex_small
+              new_cluster:
+                spark_version: 15.4.x-scala2.12
+                node_type_id: ${var.node_type_id}
+                data_security_mode: SINGLE_USER
+                autoscale:
+                  min_workers: 1
+                  max_workers: 2
+                custom_tags:
+                  project: apex-lakehouse
+                  env: ${bundle.target}
+          tasks:
+            - task_key: load_reference_seeds
+              job_cluster_key: apex_small
           email_notifications:
             on_failure:
               - data-eng-oncall@apexmfg.example # prod pages oncall, not the shared dev list

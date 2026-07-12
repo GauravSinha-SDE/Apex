@@ -139,6 +139,25 @@ these to a self-describing column: `reading_quality_status`, `run_status`, `work
 `alarm_state`, `equipment_operational_status`. No Gold column is ever named just `status`.
 This is the foundation of the Genie disambiguation strategy (see `03_nl_analytics.md`).
 
+### DQ-14 🟠 Line 3 has overlapping `production_runs` time windows
+Found only after actually building and querying `gold.changeover_time` (a derived
+cross-run metric) — invisible from profiling `production_runs` row-by-row, and not part of
+the original 13-issue profiling pass. Example: `RUN-036` runs 2026-03-13 14:00–17:55 on
+Line 3; `RUN-048` starts at 15:00, on the same line, before `RUN-036` ends. Physically
+impossible for a single production line — two SKUs cannot run concurrently on one line.
+**Scope:** 4 of 20 raw changeover candidates computed a negative time gap as a direct
+symptom; **all 4 are on Line 3**, none on Lines 1/2.
+**Impact:** any metric computed from consecutive-run sequencing on Line 3 (changeover time,
+and any future "what ran before/after X" question) silently produces nonsensical negative
+durations if this isn't filtered.
+**Handling:** `gold.changeover_time` excludes any pair where the new run's `start_ts`
+precedes the previous run's `end_ts` (`AND start_ts >= prev_end_ts`) — quarantined by
+omission from the mart rather than surfaced as a negative number. Root cause not
+determined from the sample alone; worth checking against the Postgres production-scheduling
+system directly (this is exactly the kind of "two operators started a run early / a
+correction wasn't retroactively applied" pattern a live source system can produce) before
+trusting Line 3 changeover figures specifically.
+
 ---
 
 ## 5. Referential & Logical Checks (passed / verified)

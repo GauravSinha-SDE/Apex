@@ -14,10 +14,12 @@ effective as data keeps landing.
 
 **Migration plan:**
 1. Create the new table with `CLUSTER BY (equipment_key, sensor_tag, reading_ts)` (already
-   the target shape in `src/ddl/01_catalog_and_ref.sql`) — Liquid Clustering, no `PARTITIONED
-   BY`. Cluster columns match the dominant predicate shape (queries filter by equipment/tag
-   and a time range), same rationale ZORDER was originally chosen for, but Liquid Clustering
-   incrementally reclusters new data instead of requiring full-partition rewrites.
+   the target shape declared on `silver.sensor_readings` in
+   `src/pipelines/apex_pipeline.py`'s `@dlt.table` decorator) — Liquid Clustering, no
+   `PARTITIONED BY`. Cluster columns match the dominant predicate shape (queries filter by
+   equipment/tag and a time range), same rationale ZORDER was originally chosen for, but
+   Liquid Clustering incrementally reclusters new data instead of requiring full-partition
+   rewrites.
 2. Backfill via `CREATE TABLE ... AS SELECT` (or `INSERT INTO` in date-ordered batches for a
    170M-row/day table, to bound the size of any single write/shuffle) from the old table into
    the new one, then run `OPTIMIZE` once to cluster the backfilled history.

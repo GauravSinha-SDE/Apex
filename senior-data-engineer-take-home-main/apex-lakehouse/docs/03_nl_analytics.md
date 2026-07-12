@@ -14,8 +14,12 @@ Genie is not pointed at `silver` or `bronze` — two reasons:
 
 Concretely: a **Genie space** per plant-manager audience (could be one shared space with
 row-level security doing the scoping, rather than one space per line — see Part 2E), backed
-by `gold.oee_daily`, `gold.equipment_reliability`, and additional marts I'd add with more
-time (`gold.scrap_by_line`, `gold.alarm_summary`, `gold.quality_first_pass_yield`). Each
+by five marts covering 6 of the 7 plant KPIs (`docs/apex_plant_context.md`) —
+`gold.oee_daily`, `gold.equipment_reliability`, `gold.scrap_rate_daily`,
+`gold.changeover_time`, `gold.first_pass_yield` — plus `gold.alarm_summary` and a
+critical-work-orders mart still on the "what's next" list (§5). CIP Cycle Time has no
+mart at all: the sample extracts contain no CIP cycle timing signal anywhere (checked —
+see `docs/02_data_quality.md`), so there's nothing to build it from, not a shortcut. Each
 table/view gets **Genie table + column instructions** (comments), **trusted example
 questions**, and (for the harder joins) **trusted SQL** — the three levers Genie actually
 exposes today for steering NL-to-SQL, and I'm treating them as the whole toolkit rather than
@@ -57,6 +61,26 @@ of the conformed `equipment_key`, silently dropping SAP-only assets).
 (the 5 in the brief plus edge cases — ambiguous line references, out-of-range dates, questions
 about decommissioned equipment) run against Genie on a schedule, diffed against known-correct
 SQL answers. Genie has no built-in regression harness; this would be a small Workflows job.
+
+### 2a. This verification loop is not hypothetical — I ran it
+
+I deployed this design (databricks.yml, the Lakeflow pipeline, and the gold marts) to a real
+Databricks workspace and asked Genie the brief's own 5 example questions against it. Results,
+because they're more convincing than describing the methodology abstractly:
+
+| # | Question | Result |
+|---|---|---|
+| 1 | OEE for Line 2 last Tuesday | **Correctly declined** — checked the actual date range, found no data for that specific date (sample data doesn't extend to "last Tuesday" relative to today), and said so instead of guessing. |
+| 2 | Equipment with >3 unplanned stops this month | **Wrong on the first pass, then fixed.** `gold.equipment_reliability` originally had no time dimension — Genie answered with the all-time cumulative count, presented with full confidence, mislabeled as "this month." This is worse than a decline: a plant manager would trust it. Fixed by adding a `stop_month` grain to the mart (§5 has the before/after). |
+| 3 | Quality parameter most correlated with scrap rate on Line 1 | **Correctly declined** — no correlation-ready join existed at the time; `gold.scrap_rate_daily` now exists but a proper parameter-vs-scrap-rate correlation mart still doesn't (§5). |
+| 4 | Fill weight trend for SKU CSD-001 | **Correctly declined** — genuine data-model gap, not a missing mart: `quality_checks.batch_id` has no foreign key to `production_runs.product_sku` in the source extracts, so this can't be built without inferring a batch-to-run mapping (e.g. by date+line proximity), which I haven't done and wouldn't want Genie improvising either. |
+| 5 | Technician who resolved the most critical work orders last week | **Correctly declined** — no gold mart yet exposes `silver.maintenance_work_orders`' technician/priority columns; `docs/02_data_quality.md`'s DQ-01/DQ-10 fixes are already in Silver, this is purely a missing Gold mart (§5). |
+
+**Takeaway:** 4 of 5 declines were the *correct* behavior (Gold-only scoping doing its job —
+Genie had no ungoverned table to fall back on and guess from). One was a genuine, confidently-wrong
+answer, caused by a real gap in the mart's design (no time dimension), not by Genie
+misbehaving — and it's now fixed. This is exactly the class of bug a verification loop is
+supposed to catch, and exactly why I ran one instead of only describing it.
 
 ## 3. The "status" ambiguity — architecture-level fix
 
@@ -114,6 +138,18 @@ OEE for Line 2 last Tuesday," filter line_id = 2 and production_date = that spec
 do not average across a range unless the user asks for a trend.
 ```
 
+**Column-level instruction, `gold.equipment_reliability` (added after the live-testing finding
+in §2a — this is the guardrail, not a substitute for the mart fix):**
+```
+This table is PER CALENDAR MONTH (stop_month column), not all-time. "How many unplanned stops
+did EQP-105 have" without a time qualifier means the CURRENT month unless the user says
+otherwise — do not sum across all months and present it as if it were a single period. For an
+explicit all-time total, SUM(unplanned_stop_count) across all stop_month rows for that
+equipment, and say "all-time" in the answer so it isn't confused with a monthly figure.
+mtbf_hours computed within one month from a small stop count is statistically noisy — flag
+this if the underlying count is 3 or fewer.
+```
+
 **Trusted example question -> SQL** (pinned, not left to freehand generation), for the
 brief's own example *"What was the OEE for Line 2 last Tuesday?"*:
 ```sql
@@ -129,22 +165,40 @@ trust it fresh in every generated query.)
 **Synonyms** (Genie's term-mapping mechanism):
 ```
 unplanned stop, breakdown, failure  -> planning_category = 'UNPLANNED' rows in
-                                        gold.equipment_reliability
+                                        gold.equipment_reliability (per-month grain — see
+                                        that column's instruction above)
 critical alarm                       -> severity_rank = 1 in future gold.alarm_summary
-scrap, rejects, waste                -> scrap_units / scrap_rate
-changeover                           -> gap between consecutive production_runs on same line_id
-                                        where product_sku differs (not a column yet — flagged
-                                        as a gold mart I'd build next, see README-SOLUTION.md)
+scrap, rejects, waste                -> gold.scrap_rate_daily.scrap_rate
+first-pass yield, right-first-time   -> gold.first_pass_yield.first_pass_yield
+changeover                           -> gold.changeover_time.changeover_minutes (per-event
+                                        grain, one row per SKU switch on a line)
 ```
 
 ## 5. What I'd add with more time
 
-- `gold.scrap_by_line`, `gold.alarm_summary`, `gold.changeover_log` marts — three of the
-  five example questions in the brief ("critical work orders," "correlated quality
-  parameter," "changeover time") don't yet have a purpose-built Gold table, so today Genie
-  would have to improvise a multi-table join for them even with instructions. That's exactly
-  the failure mode this whole approach is trying to avoid.
+Built and live-tested during this exercise: `gold.oee_daily`, `gold.equipment_reliability`
+(now per-month), `gold.scrap_rate_daily`, `gold.changeover_time`, `gold.first_pass_yield` —
+6 of the 7 plant KPIs, with `docs/02_data_quality.md`'s DQ-14 (Line 3's overlapping run
+windows) found and handled along the way. What's still missing:
+
+- **`gold.critical_work_orders`** (or extend `equipment_reliability`) exposing
+  `silver.maintenance_work_orders`' `technician`/`priority` columns — closes example
+  question 5 ("which technician resolved the most critical work orders"). The Silver-layer
+  fix is already done (DQ-01/DQ-10); this is purely a missing Gold mart, the easiest of the
+  remaining gaps.
+- **A quality-parameter-vs-scrap-rate correlation mart** — closes example question 3.
+  `gold.scrap_rate_daily` exists now, but correlating it against `quality_checks.parameter`
+  values needs a proper per-line-day pivot/join, not just two separate marts sitting next to
+  each other. More involved than the others; genuinely not built yet.
+- **A batch-to-run mapping for `quality_checks.batch_id` → `production_runs.product_sku`** —
+  closes example question 4 ("fill weight trend for SKU CSD-001"). This is a data-model gap
+  in the source extracts, not a missing mart: there's no FK between the two tables as given.
+  Would need to either get LabWare to export the run/batch link, or infer it (e.g. batch's
+  `check_timestamp` falls within a run's `[start_ts, end_ts]` on the same line) — inference is
+  risky enough (overlapping runs exist per DQ-14) that I'd rather get the real link than guess.
+- `gold.alarm_summary` mart.
 - A Genie **certified answers** review pass with an actual plant supervisor — my synonym
   list and instructions are my best inference from `docs/apex_plant_context.md`, not verified
   domain language.
-- The regression benchmark described in §2.
+- The regression benchmark described in §2, formalized (§2a is one manual pass through it,
+  not the scheduled/automated version).
