@@ -41,18 +41,6 @@
 └── README.md                       # Assignment brief (provided, one level up from this dir)
 ```
 
-## Setup notes
-1. Upload the six sample extracts to a UC Volume, e.g. `/Volumes/apex_dev/bronze/landing/`
-2. Set `BASE` in `notebooks/01_data_exploration.py` to that path
-3. `databricks bundle deploy -t dev` (fill in `sql_warehouse_id` in `databricks.yml`'s dev
-   target first — left blank on purpose; `workspace.host` resolves from `--profile`/
-   `DATABRICKS_HOST`, not the file — see file comments)
-4. `databricks bundle run apex_bootstrap -t dev` — runs everything in true dependency order:
-   `01_catalog_and_ref.sql` (catalog, schemas, ref table shapes) → `00_setup_seeds.py`
-   (loads `src/mappings/*.csv` into `ref.*`) → one `apex_pipeline` run (creates bronze/silver
-   tables) → all six gold MVs in sequence (`02a` → `02b` → `02c` → `02d` → `02e` → `02f`).
-5. Subsequent pipeline runs (e.g. after new data lands), independent of the one-time
-   bootstrap: `databricks bundle run apex_pipeline -t dev`
 
 ## Live-tested, not just written
 
