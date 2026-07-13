@@ -1,8 +1,7 @@
 # Part 3: Short Answers
 
 Answering Q2, Q4, Q5, Q6 — chosen because they map directly to decisions already made
-elsewhere in this repo (physical design, semantic layer, streaming design, governance) and
-let me show the reasoning behind those decisions rather than restate them.
+elsewhere in this repo (physical design, semantic layer, streaming design, governance) 
 
 ## Q2. Storage Optimization: migrating `sensor_readings` off `date`-partition + `ZORDER`
 
