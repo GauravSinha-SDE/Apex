@@ -3,7 +3,8 @@
 ```
 .
 ├── notebooks/
-│   ├── 01_data_exploration.py      # Spark profiling — discovers & evidences 13 of 14 DQ issues
+│   ├── 01_data_exploration.py      # Spark profiling, ad-hoc (no bundle needed) — all 14 DQ issues,
+│   │                                #   including DQ-14 which needed a derived-metric check (§9)
 │   └── 00_setup_seeds.py           # loads src/mappings/*.csv into ref.* tables
 ├── src/
 │   ├── ddl/

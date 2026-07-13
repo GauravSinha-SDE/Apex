@@ -447,7 +447,56 @@ print(f"Work orders with unresolvable assets ..... {orphans.count()}  (expect 0)
 
 # MAGIC %md
 # MAGIC ---
-# MAGIC ## 9 · Defect inventory → architecture
+# MAGIC ## 9 · DQ-14 — found later, not by profiling raw files
+# MAGIC
+# MAGIC Everything above was found by interrogating the six raw extracts directly, row by row.
+# MAGIC DQ-14 is different on purpose: it's invisible in `production_runs.csv` looked at row by
+# MAGIC row — it only shows up once you compute a **derived** metric across consecutive rows.
+# MAGIC Included here to make that point concrete: profiling raw files is necessary but not
+# MAGIC sufficient. This specific check — "do any two runs on the same line overlap in time?" —
+# MAGIC is exactly what surfaced this live, while building the `gold.changeover_time` mart
+# MAGIC (`docs/03_nl_analytics.md` §2a has the fuller story of how that mart came to exist).
+
+# COMMAND ----------
+
+from pyspark.sql import Window
+
+runs_typed = (runs
+    .withColumn("start_ts", F.to_timestamp("start_time"))
+    .withColumn("end_ts",   F.to_timestamp("end_time"))
+    .filter(F.col("status") == "COMPLETED"))
+
+w = Window.partitionBy("line_id").orderBy("start_ts")
+
+overlaps = (runs_typed
+    .withColumn("prev_end_ts", F.lag("end_ts").over(w))
+    .withColumn("prev_run_id", F.lag("run_id").over(w))
+    .filter(F.col("prev_end_ts").isNotNull() & (F.col("start_ts") < F.col("prev_end_ts")))
+    .select("line_id", F.col("prev_run_id").alias("earlier_run"),
+            F.col("run_id").alias("overlapping_run"),
+            "prev_end_ts", "start_ts"))
+
+print("Overlapping run pairs — physically impossible, one line can't run two SKUs at once:",
+      overlaps.count())
+display(overlaps)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC **Impact:** any metric computed from consecutive-run sequencing on this line — most
+# MAGIC concretely a changeover-time calculation — produces a nonsensical **negative** duration
+# MAGIC if these rows aren't excluded. All occurrences above are on **Line 3 only**; none on
+# MAGIC Lines 1/2.
+# MAGIC **Fix:** `gold.changeover_time` filters `start_ts >= prev_end_ts`, excluding these by
+# MAGIC omission rather than surfacing a negative number. Root cause not determined from the
+# MAGIC sample alone — worth checking directly against the Postgres production-scheduling system
+# MAGIC before trusting Line 3 changeover figures specifically.
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ---
+# MAGIC ## 10 · Defect inventory → architecture
 # MAGIC
 # MAGIC | ID | Defect | Severity | Where it is fixed |
 # MAGIC |---|---|---|---|
@@ -464,8 +513,9 @@ print(f"Work orders with unresolvable assets ..... {orphans.count()}  (expect 0)
 # MAGIC | DQ-11 | Volume units inconsistent **and** 1000× scale error | 🟠 | normalize + validate vs `units × sku_size` |
 # MAGIC | DQ-12 | `specs` polymorphic (JSON / text / null) | 🟡 | `try_parse_json` → VARIANT, keep raw |
 # MAGIC | DQ-13 | `status` means 5 different things | 🔴 breaks NL queries | rename every one in Silver/Gold |
+# MAGIC | DQ-14 | Line 3 `production_runs` has overlapping time windows | 🟠 corrupts changeover time | `gold.changeover_time` excludes by omission (§9 above) |
 # MAGIC
-# MAGIC ### Three principles this exploration produced
+# MAGIC ### Four principles this exploration produced
 # MAGIC
 # MAGIC 1. **Load raw, interrogate after.** Schema inference on read would have hidden the epoch-ms
 # MAGIC    timestamps, the sentinels, and the mixed severity coding. Bronze stays all-`STRING` for a reason.
@@ -473,6 +523,10 @@ print(f"Work orders with unresolvable assets ..... {orphans.count()}  (expect 0)
 # MAGIC    In a regulated food-and-beverage plant, silently discarding data is not acceptable.
 # MAGIC 3. **Identity is the architecture.** The crosswalk tables are not cleanup chores — they are the
 # MAGIC    integration between OT and IT that this plant has never had. Everything else depends on them.
+# MAGIC 4. **Profiling raw files finds most defects, but not all of them.** DQ-14 only existed as a
+# MAGIC    negative number once a derived cross-row metric was actually computed — proof that
+# MAGIC    building and testing the downstream marts is itself a data-quality discovery method,
+# MAGIC    not just a validation step after profiling is "done."
 
 # COMMAND ----------
 
