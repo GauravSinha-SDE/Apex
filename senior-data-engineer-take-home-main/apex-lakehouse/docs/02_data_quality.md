@@ -4,13 +4,13 @@ Every issue below was found by profiling the actual sample files (row counts, di
 counts, and cross-file joins), not by assumption. Each entry documents: **what**, **evidence**,
 **impact if unhandled**, and **where the architecture fixes it**.
 
-Severity legend: 🔴 breaks joins/answers · 🟠 corrupts metrics · 🟡 cosmetic/consistency
+Severity legend: [CRITICAL] breaks joins/answers · [MAJOR] corrupts metrics · [MINOR] cosmetic/consistency
 
 ---
 
 ## 1. Identity & Conformance Issues
 
-### DQ-01 🔴 Four equipment ID conventions across systems
+### DQ-01 [CRITICAL] Four equipment ID conventions across systems
 | System | Convention | Example |
 |---|---|---|
 | SCADA/registry, Line 1 | `EQ-1xx` | `EQ-101` |
@@ -27,7 +27,7 @@ the conformed key + friendly name.
 (A-101 → EQ-101). Verified consistent for all 15 assets present in maintenance_logs; in production
 I would confirm against SAP PM equipment master (EQUI table) instead of inferring.
 
-### DQ-02 🔴 line_id encoded differently in every file
+### DQ-02 [CRITICAL] line_id encoded differently in every file
 `1/2/3` (sensor_readings, production_runs) · `L1/L2/L3` (alarms_events) ·
 `Line 1`, `Line-2`, `3` **mixed within one file** (quality_checks) · `Line 1` vs bare `2`
 (equipment_registry).
@@ -35,7 +35,7 @@ I would confirm against SAP PM equipment master (EQUI table) instead of inferrin
 **Handling:** `ref.line_xref` lookup normalizes all observed variants to `line_id INT` in Silver.
 Unmapped values fail a DLT expectation (`FAIL UPDATE`) rather than passing through silently.
 
-### DQ-03 🟠 Decommissioned equipment still in registry
+### DQ-03 [MAJOR] Decommissioned equipment still in registry
 `EQ-110` (Depalletizer 1) is `DECOMMISSIONED`, replaced by `EQ-111` on 2025-12-15.
 **Impact:** Counting it as active equipment skews availability and maintenance-density metrics.
 **Handling:** `is_active` flag in the equipment dimension; dimension is modeled SCD Type 2 in
@@ -45,7 +45,7 @@ Silver so historical sensor/WO data still joins to the equipment that existed at
 
 ## 2. Timestamp Issues
 
-### DQ-04 🔴 Three timestamp formats in sensor_readings — including epoch-milliseconds
+### DQ-04 [CRITICAL] Three timestamp formats in sensor_readings — including epoch-milliseconds
 294 rows ISO-8601 with `Z`, 180 rows `yyyy-MM-dd HH:mm:ss` (no timezone), **42 rows raw
 epoch-ms** (e.g. `1773566325000`). A naive `CAST(timestamp AS TIMESTAMP)` nulls the epoch rows.
 **Impact:** ~8% of telemetry silently dropped or lands in 1970.
@@ -57,7 +57,7 @@ plant-local (America/Chicago). Silver stores everything as UTC `TIMESTAMP` and G
 plant-local view column. This must be confirmed with the historian team — a 5–6 h shift error
 would corrupt every shift-level KPI.
 
-### DQ-05 🟠 maintenance_logs mixes ISO and US-style `MM/DD/YYYY HH:MM`
+### DQ-05 [MAJOR] maintenance_logs mixes ISO and US-style `MM/DD/YYYY HH:MM`
 33 of 80 work orders use slash format. `install_date` in the registry has **four** formats,
 one of which (`15/03/2015`) is day-first — proof that format cannot be inferred per file, only
 per value.
@@ -68,7 +68,7 @@ per value.
 
 ## 3. Value-Level Issues
 
-### DQ-06 🟠 Sentinel error values in sensor readings
+### DQ-06 [MAJOR] Sentinel error values in sensor readings
 8 rows contain `-999.99` (classic historian/PLC error code) and one physically impossible
 negative vibration reading (`-1.3`). 11 additional rows have empty `value`.
 **Impact:** One `-999.99` in a daily average shifts a temperature mean by several degrees —
@@ -77,7 +77,7 @@ enough to fire false process alerts.
 quarantine table with reason codes. Per-tag physical range rules (vibration ≥ 0) applied from a
 `ref.sensor_tag_registry` rules table rather than hard-coded.
 
-### DQ-07 🟠 OPC quality codes must gate every analytic
+### DQ-07 [MAJOR] OPC quality codes must gate every analytic
 `quality` ∈ {192 Good (457 rows), 0 Bad (33), 64 Uncertain (25)} — 11% of telemetry is not
 trustworthy. The text `status` column duplicates it (GOOD/BAD/SUSPECT) — redundant, and one more
 overload of the word "status".
@@ -85,26 +85,26 @@ overload of the word "status".
 **Gold aggregates filter to quality = 192 only**. Genie instructions state this rule explicitly
 so NL answers never average bad-quality readings.
 
-### DQ-08 🟡 Duplicate sensor rows
+### DQ-08 [MINOR] Duplicate sensor rows
 3 exact duplicate `(timestamp, equipment_id, sensor_tag)` keys — expected from historian
 store-and-forward replays.
 **Handling:** `dropDuplicates` on the natural key in Silver (deterministic: keep highest
 quality, then latest ingest time). At production scale this becomes watermarked stateful dedupe.
 
-### DQ-09 🔴 Alarm severity mixes two coding systems in one column
+### DQ-09 [CRITICAL] Alarm severity mixes two coding systems in one column
 `severity` contains numeric `1/2/3/4` (75 rows) **and** text `LOW/MEDIUM/HIGH/CRITICAL`
 (75 rows). Mapping is not guessable from data alone (is `1` critical or low?).
 **Handling:** `ref.alarm_severity_xref` seed with the FactoryTalk convention
 (1=CRITICAL … 4=LOW) — flagged as an **assumption to verify with controls engineering**, since
 inverting it inverts every "critical alarms" answer.
 
-### DQ-10 🟡 Maintenance type synonyms
+### DQ-10 [MAJOR] Maintenance type synonyms
 `Preventive` (25) and `PM` (21) are the same thing; `Corrective` vs `Breakdown` overlap.
 **Impact:** MTBF must count only *unplanned* stops; miscategorization corrupts it.
 **Handling:** `ref.wo_type_xref` maps to normalized type + `planning_category`
 (PLANNED/UNPLANNED). MTBF/MTTR in Gold use `planning_category` only.
 
-### DQ-11 🟠 Volume units inconsistent AND on a different scale than they claim
+### DQ-11 [MAJOR] Volume units inconsistent AND on a different scale than they claim
 `volume_unit` ∈ {liters, L, gal, gallons}. Cross-check: RUN-001 produced 38,312 units of a
 355 ml SKU ≈ **13,600 L**, while `actual_volume` = 13.2 "liters" — the values are in
 **thousands of liters (kL)**, mislabeled. Gallon rows need ×3.785 on top.
@@ -114,7 +114,7 @@ this is the trap: fixing the label without noticing the scale.
 inference validated against `units × sku_size_ml`; mismatch > 5% quarantines the row.
 SKU sizes come from a `ref.product_sku` seed parsed from product names.
 
-### DQ-12 🟡 Registry `specs` is polymorphic
+### DQ-12 [MINOR] Registry `specs` is polymorphic
 Sometimes a JSON string, sometimes free text ("Max speed 600 BPM…"), sometimes null; also used
 as a decommission note for EQ-110.
 **Handling:** Silver `try_parse_json` into a `specs VARIANT` column; unparseable text preserved
@@ -125,7 +125,7 @@ in `specs_raw`. Criticality normalized to upper case (`c` → `C`); `type` casin
 
 ## 4. Semantic Issues
 
-### DQ-13 🔴 "status" means five different things
+### DQ-13 [CRITICAL] "status" means five different things
 | File | Meaning | Domain |
 |---|---|---|
 | sensor_readings | OPC data-quality status | GOOD/BAD/SUSPECT |
@@ -139,7 +139,7 @@ these to a self-describing column: `reading_quality_status`, `run_status`, `work
 `alarm_state`, `equipment_operational_status`. No Gold column is ever named just `status`.
 This is the foundation of the Genie disambiguation strategy (see `03_nl_analytics.md`).
 
-### DQ-14 🟠 Line 3 has overlapping `production_runs` time windows
+### DQ-14 [MAJOR] Line 3 has overlapping `production_runs` time windows
 Found only after actually building and querying `gold.changeover_time` (a derived
 cross-run metric) — invisible from profiling `production_runs` row-by-row, and not part of
 the original 13-issue profiling pass. Example: `RUN-036` runs 2026-03-13 14:00–17:55 on
@@ -162,10 +162,10 @@ trusting Line 3 changeover figures specifically.
 
 ## 5. Referential & Logical Checks (passed / verified)
 
-- `good_units + scrap_units = total_units` holds for all completed runs ✅
-- QC `result` is consistent with `lower_spec ≤ value ≤ upper_spec` for all parseable rows ✅
-- No COMPLETED work order missing `completed_date` ✅; no CLEARED alarm missing acknowledgment ✅
-- All maintenance assets (15) resolve through the crosswalk to registry equipment ✅
+- `good_units + scrap_units = total_units` holds for all completed runs (verified)
+- QC `result` is consistent with `lower_spec ≤ value ≤ upper_spec` for all parseable rows (verified)
+- No COMPLETED work order missing `completed_date` (verified); no CLEARED alarm missing acknowledgment (verified)
+- All maintenance assets (15) resolve through the crosswalk to registry equipment (verified)
 
 These are encoded as DLT expectations anyway — data that is clean today is not clean forever.
 

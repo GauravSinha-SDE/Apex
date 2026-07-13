@@ -500,20 +500,20 @@ display(overlaps)
 # MAGIC
 # MAGIC | ID | Defect | Severity | Where it is fixed |
 # MAGIC |---|---|---|---|
-# MAGIC | DQ-01 | Four equipment ID namespaces (incl. SAP `A-xxx`) | 🔴 blocks all joins | `ref.equipment_xref` conformed dimension |
-# MAGIC | DQ-02 | `line_id` encoded 4 ways, inconsistent within a file | 🔴 fragments every per-line KPI | `ref.line_xref` + `expect_or_fail` |
-# MAGIC | DQ-03 | Decommissioned asset still present (EQ-110→111) | 🟠 | SCD2 equipment dimension |
-# MAGIC | DQ-04 | 3 timestamp formats incl. epoch-ms (8% silently lost) | 🔴 | multi-format parser + quarantine |
-# MAGIC | DQ-05 | Mixed ISO / US date formats; ambiguous day-first | 🟠 | same parser, range-check disambiguation |
-# MAGIC | DQ-06 | `-999.99` sentinels, impossible negatives | 🟠 corrupts averages | Silver expectation → quarantine |
-# MAGIC | DQ-07 | OPC quality: 11.3% untrustworthy | 🟠 | `is_good_quality`; Gold filters to 192 |
-# MAGIC | DQ-08 | Duplicate keys from store-and-forward | 🟡 | watermarked dedupe (idempotent) |
-# MAGIC | DQ-09 | Alarm severity: numeric *and* text in one column | 🔴 | `ref.alarm_severity_xref` (assumption flagged) |
-# MAGIC | DQ-10 | `Preventive` vs `PM` synonyms | 🟠 corrupts MTBF | `ref.wo_type_xref` → `planning_category` |
-# MAGIC | DQ-11 | Volume units inconsistent **and** 1000× scale error | 🟠 | normalize + validate vs `units × sku_size` |
-# MAGIC | DQ-12 | `specs` polymorphic (JSON / text / null) | 🟡 | `try_parse_json` → VARIANT, keep raw |
-# MAGIC | DQ-13 | `status` means 5 different things | 🔴 breaks NL queries | rename every one in Silver/Gold |
-# MAGIC | DQ-14 | Line 3 `production_runs` has overlapping time windows | 🟠 corrupts changeover time | `gold.changeover_time` excludes by omission (§9 above) |
+# MAGIC | DQ-01 | Four equipment ID namespaces (incl. SAP `A-xxx`) | [CRITICAL] blocks all joins | `ref.equipment_xref` conformed dimension |
+# MAGIC | DQ-02 | `line_id` encoded 4 ways, inconsistent within a file | [CRITICAL] fragments every per-line KPI | `ref.line_xref` + `expect_or_fail` |
+# MAGIC | DQ-03 | Decommissioned asset still present (EQ-110→111) | [MAJOR] | SCD2 equipment dimension |
+# MAGIC | DQ-04 | 3 timestamp formats incl. epoch-ms (8% silently lost) | [CRITICAL] | multi-format parser + quarantine |
+# MAGIC | DQ-05 | Mixed ISO / US date formats; ambiguous day-first | [MAJOR] | same parser, range-check disambiguation |
+# MAGIC | DQ-06 | `-999.99` sentinels, impossible negatives | [MAJOR] corrupts averages | Silver expectation → quarantine |
+# MAGIC | DQ-07 | OPC quality: 11.3% untrustworthy | [MAJOR] | `is_good_quality`; Gold filters to 192 |
+# MAGIC | DQ-08 | Duplicate keys from store-and-forward | [MINOR] | watermarked dedupe (idempotent) |
+# MAGIC | DQ-09 | Alarm severity: numeric *and* text in one column | [CRITICAL] | `ref.alarm_severity_xref` (assumption flagged) |
+# MAGIC | DQ-10 | `Preventive` vs `PM` synonyms | [MAJOR] corrupts MTBF | `ref.wo_type_xref` → `planning_category` |
+# MAGIC | DQ-11 | Volume units inconsistent **and** 1000× scale error | [MAJOR] | normalize + validate vs `units × sku_size` |
+# MAGIC | DQ-12 | `specs` polymorphic (JSON / text / null) | [MINOR] | `try_parse_json` → VARIANT, keep raw |
+# MAGIC | DQ-13 | `status` means 5 different things | [CRITICAL] breaks NL queries | rename every one in Silver/Gold |
+# MAGIC | DQ-14 | Line 3 `production_runs` has overlapping time windows | [MAJOR] corrupts changeover time | `gold.changeover_time` excludes by omission (§9 above) |
 # MAGIC
 # MAGIC ### Four principles this exploration produced
 # MAGIC
