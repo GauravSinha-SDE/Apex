@@ -138,14 +138,3 @@ between them.**
   time. This keeps the two systems doing what each is actually good at instead of stretching
   one to cover both.
 
-**Newer Databricks capability worth flagging, with an honest confidence caveat:** Databricks
-has been moving in the direction of **Lakebase** (a managed operational Postgres offering
-positioned for exactly this kind of low-latency transactional workload alongside a lakehouse)
-and **Delta Lake's row-level concurrency / deletion vectors** improvements that narrow the gap
-for higher-concurrency single-row updates directly on Delta. **I have not personally validated
-Lakebase's current maturity/GA status or exact feature set** against this specific
-write-back-plus-CDC-sync pattern — I'm naming it because it's directionally the right kind of
-capability to evaluate, not because I'm certain it's the final answer today. If it's mature
-enough by build time, it could collapse the "separate Postgres + CDC sync" design into "one
-Lakebase instance, native to the same governance/catalog boundary" — worth a spike before
-committing to the two-system design above.
